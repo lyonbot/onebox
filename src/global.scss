@@ -1,0 +1,12 @@
+div.solid-dockview-panel-content {
+  display: block;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+
+div.dv-resize-container {
+  border: 1px solid #999;
+  box-shadow: 0 1px 5px #999c;
+}
