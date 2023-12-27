@@ -1,3 +1,4 @@
+import { debounce } from "lodash";
 import { createEffect, on, createMemo, mapArray, createSignal } from "solid-js";
 
 /**
@@ -12,37 +13,52 @@ export function watch<T>(
   createEffect(on(createMemo(expr, undefined, { equals }), callback, { defer }));
 }
 
+export function useLocalStorage<T = string>(
+  key: string,
+  parse: (s: string | null) => T = x => x as any,
+  stringify: (t: T) => string = x => String(x)
+) {
+  const s = localStorage.getItem(key)
+  const [value, setValue] = createSignal<T>(parse(s))
+  const update = debounce(() => localStorage.setItem(key, stringify(value())), 1000)
+
+  createEffect(on(value, update))
+  return [value, setValue] as const
+}
+
+
 export function createLifecycleArray<T extends object>() {
   const [initializers, setInitializers] = createSignal<(() => T)[]>([]);
-  const answer = mapArray(initializers, (initializer) => initializer());
+  const computed = mapArray(initializers, (initializer) => initializer());
 
   const push = (initializer: () => T) => {
     setInitializers((initializers) => [...initializers, initializer]);
-    return answer().at(-1)!;
+    return computed().at(-1)!;
   }
 
   const remove = (...items: T[]) => {
     const newArray = initializers().slice()
 
     for (const item of items) {
-      const index = answer().indexOf(item);
+      const index = computed().indexOf(item);
       if (index !== -1) newArray.splice(index, 1);
     }
 
     setInitializers(newArray);
   }
 
-  const proxy = new Proxy([], {
-    get(_, key) {
-      if (key === "push") return push;
-      if (key === "remove") return remove;
-
-      return answer()[key as any];
-    },
-  }) as unknown as ReadonlyArray<T> & {
+  const answer = computed as {
+    (): T[]
     push: (initializer: () => T) => T,
     remove: (...items: T[]) => void,
+    clear: () => void,
+  }
+  answer.push = push;
+  answer.remove = remove;
+  answer.clear = () => {
+    setInitializers([])
+    computed() // force computing
   };
 
-  return proxy
+  return answer
 }

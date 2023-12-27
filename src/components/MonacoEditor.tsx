@@ -9,6 +9,7 @@ export interface MonacoEditorProps {
 
   options?: monaco.editor.IEditorOptions
 
+  onSetup?(editor: monaco.editor.IStandaloneCodeEditor): void
   onChange?(value: string, e: monaco.editor.IModelContentChangedEvent): void
 
   class?: string
@@ -26,6 +27,7 @@ export default function MonacoEditor(props: MonacoEditorProps) {
       value: props.value,
       model: props.model,
       automaticLayout: true,
+      fixedOverflowWidgets: true,
       ...props.options,
     });
 
@@ -54,6 +56,8 @@ export default function MonacoEditor(props: MonacoEditorProps) {
         editor.setModel(props.model)
       }
     })
+
+    props.onSetup?.(editor)
   })
 
   onCleanup(() => {

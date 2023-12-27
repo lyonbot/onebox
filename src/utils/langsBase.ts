@@ -1,8 +1,9 @@
-export const enum Langs {
+export const enum Lang {
   UNKNOWN = 'unknown',
   YAML = 'yaml',
-  JSON = 'json', // can be json5
+  JSON = 'json', // in monaco, use jsonc
   JAVASCRIPT = 'javascript',
+  TYPESCRIPT = 'typescript',
   BASE64 = 'base64',
   HEX = 'hex',
   QUERYSTRING = 'querystring',  // like ?foo=bar
@@ -11,51 +12,73 @@ export const enum Langs {
   STRING_LITERAL = 'string_literal',
 }
 
-export function guessLang(str: string): Langs {
+export interface LangDescription {
+  name: string
+  extname?: string // defaults to .txt
+  mime?: string // defaults to text/plain
+  monacoLanguage?: string // defaults to plain
+}
+
+export const LangDescriptions: Record<Lang, LangDescription> = {
+  unknown: { name: '0. Plain Unknown Text' },
+  yaml: { name: 'YAML', extname: '.yaml', mime: 'text/yaml', monacoLanguage: 'yaml' },
+  json: { name: 'JSON', extname: '.json', mime: 'application/json', monacoLanguage: 'json' },
+  javascript: { name: 'JavaScript', extname: '.jsx', mime: 'application/javascript', monacoLanguage: 'javascript' },
+  typescript: { name: 'TypeScript', extname: '.tsx', mime: 'application/typescript', monacoLanguage: 'typescript' },
+  base64: { name: 'Base64' },
+  hex: { name: 'Hex' },
+  querystring: { name: 'Query String' },
+  urlencoded: { name: 'URL Encoded' },
+  toml: { name: 'TOML', extname: '.toml', mime: 'text/toml', monacoLanguage: 'ini' },
+  string_literal: { name: 'String Literal' },
+}
+
+export function guessLang(str: string): Lang {
   str = str.trim()
 
   if (/^.{0,10}['"]/.test(str)) {
     // earlier than json
-    return Langs.STRING_LITERAL;
+    return Lang.STRING_LITERAL;
   }
 
   if (str.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(str)) {
-    return Langs.BASE64;
+    return Lang.BASE64;
   }
 
-  if (/^([A-Fa-f0-9]{2})*$/.test(str)) {
-    return Langs.HEX;
+  if (/^([A-Fa-f0-9]{2})+$/.test(str)) {
+    return Lang.HEX;
   }
 
   if (/^\??\w+=/.test(str)) {
     // like ?foo=bar
-    return Langs.QUERYSTRING;
+    return Lang.QUERYSTRING;
   }
 
   if (/^\w+\s*=\s*\S/m.test(str)) {
     // like foo=bar
-    return Langs.TOML;
+    return Lang.TOML;
   }
 
   if (/^[\w-]+:\s*(\|<?\s*)?(#.*)?$/m.test(str)) {
-    return Langs.YAML;
+    return Lang.YAML;
   }
 
   if (/^[{[]/.test(str)) {
-    return Langs.JSON;
+    return Lang.JSON;
   }
 
   if (/\b(function|var |let |const |=>|return)\b/.test(str)) {
-    return Langs.JAVASCRIPT;
+    if (/^(type|interface)\b\w|[\w=]\s*\(\w+\s*:/m.test(str)) return Lang.TYPESCRIPT;
+    return Lang.JAVASCRIPT;
   }
 
   if (/"[\w-]+":/.test(str)) {
-    return Langs.JSON;
+    return Lang.JSON;
   }
 
   if (/%[A-Fa-f0-9]{2}/.test(str)) {
-    return Langs.URLENCODED;
+    return Lang.URLENCODED;
   }
 
-  return Langs.UNKNOWN;
+  return Lang.UNKNOWN;
 }

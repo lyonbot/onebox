@@ -6,6 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "jsxImportSource": "solid-js",
+    "resolveJsonModule": true,
     "experimentalDecorators": true,
     "jsx": "preserve",
     "strict": true,
