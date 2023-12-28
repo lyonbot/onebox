@@ -201,3 +201,14 @@ div.dv-resize-container {
     color: #000;
   }
 }
+
+.ob-sidebar-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  gap: 12px;
+  border-top: 1px solid #999;
+  background-color: #eee;
+}

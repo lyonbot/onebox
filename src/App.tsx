@@ -1,5 +1,5 @@
 /* @refresh granular */
-import { onMount } from "solid-js";
+import { getOwner, onMount, runWithOwner } from "solid-js";
 import { useOneBox } from "./store";
 import { Sidebar } from "./components/Sidebar";
 import * as monaco from 'monaco-editor';
@@ -8,9 +8,10 @@ import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
 
-window.monaco = monaco
-window._ = _
-window.lodash = _
+const global = window as any
+global.monaco = monaco
+global._ = _
+global.lodash = _
 
 export default function App() {
   const oneBox = useOneBox()
@@ -30,18 +31,18 @@ export default function App() {
 
 function EditZone() {
   const oneBox = useOneBox()
+  const owner = getOwner()
 
   watch(() => oneBox.panels.state.dockview, dockview => {
     if (!dockview) return
-    // const owner = getOwner()
 
     // load from localStorage
-    // oneBox.api.projectCacheLoad()
+    oneBox.api.loadLastProject()
 
-    // // update cache when window lost focus
-    // window.addEventListener('blur', () => {
-    //   runWithOwner(owner, () => oneBox.api.projectCacheSave())
-    // })
+    // update cache when window lost focus
+    document.body.addEventListener('focusout', () => {
+      runWithOwner(owner, () => oneBox.api.saveLastProject())
+    })
   })
 
   return <OneBoxDockview />

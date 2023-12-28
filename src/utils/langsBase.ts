@@ -43,7 +43,7 @@ export function guessLang(str: string): Lang {
     return Lang.STRING_LITERAL;
   }
 
-  if (/^#{1,6} .+\n\n/.test(str) || /^(- |\d+\. )/m.test(str)) {
+  if (/^#{1,6} .+\n\n/.test(str) || /^(- |\d+\. |```\w*$)/m.test(str)) {
     return Lang.MARKDOWN;
   }
 

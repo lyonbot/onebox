@@ -128,5 +128,17 @@ export function Sidebar(props: { id: string }) {
         }}
       </For>
     </div>
-  </div>;
+
+    <div class="ob-sidebar-footer">
+      <a href="#" onClick={e => {
+        e.preventDefault();
+        if (confirm('All files will be gone. Are you sure?')) {
+          oneBox.api.resetProject()
+          oneBox.api.saveLastProject()
+        }
+      }}>Reset Project</a>
+
+      <a href="https://github.com/lyonbot/onebox" target="_blank">GitHub</a>
+    </div>
+  </div>
 }
