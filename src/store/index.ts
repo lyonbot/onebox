@@ -68,8 +68,12 @@ function createOneBoxStore() {
     },
     loadLastProject() {
       const data = localStorage.getItem(LS_LAST_PROJECT_DATA)
-      if (!data) return
-      api.importProject(JSON.parse(data))
+      if (!data) return false
+
+      const projectData = JSON.parse(data) as ExportedProjectData
+      if (!projectData.files?.length) return false
+      api.importProject(projectData)
+      return true
     },
   }
 

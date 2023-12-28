@@ -42,7 +42,10 @@ function EditZone() {
     if (!dockview) return
 
     // load from localStorage
-    oneBox.api.loadLastProject()
+    if (!oneBox.api.loadLastProject()) {
+      console.log('create empty file')
+      oneBox.api.createEmptyFile()
+    }
 
     // update cache when window lost focus
     document.body.addEventListener('focusout', () => {
