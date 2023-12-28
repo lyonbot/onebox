@@ -8,9 +8,6 @@ dependencies:
   '@iconify-json/mdi':
     specifier: ^1.1.63
     version: 1.1.63
-  '@types/lodash':
-    specifier: ^4.14.202
-    version: 4.14.202
   dockview-core:
     specifier: ^1.8.5
     version: 1.8.5
@@ -20,9 +17,6 @@ dependencies:
   monaco-editor:
     specifier: ^0.45.0
     version: 0.45.0
-  solid-dockview:
-    specifier: ^1.0.1
-    version: 1.0.1(dockview-core@1.8.5)(solid-js@1.8.7)
   solid-js:
     specifier: ^1.8.7
     version: 1.8.7
@@ -31,9 +25,9 @@ dependencies:
     version: 0.1.17
 
 devDependencies:
-  '@babel/plugin-proposal-decorators':
-    specifier: ^7.23.6
-    version: 7.23.6(@babel/core@7.23.6)
+  '@types/lodash':
+    specifier: ^4.14.202
+    version: 4.14.202
   '@types/node':
     specifier: ^18.19.3
     version: 18.19.3
@@ -330,31 +324,6 @@ packages:
     hasBin: true
     dependencies:
       '@babel/types': 7.23.6
-    dev: true
-
-  /@babel/plugin-proposal-decorators@7.23.6(@babel/core@7.23.6):
-    resolution: {integrity: sha512-D7Ccq9LfkBFnow3azZGJvZYgcfeqAw3I1e5LoTpj6UKIFQilh8yqXsIGcRIqbBdsPWIz+Ze7ZZfggSj62Qp+Fg==}
-    engines: {node: '>=6.9.0'}
-    peerDependencies:
-      '@babel/core': ^7.0.0-0
-    dependencies:
-      '@babel/core': 7.23.6
-      '@babel/helper-create-class-features-plugin': 7.23.6(@babel/core@7.23.6)
-      '@babel/helper-plugin-utils': 7.22.5
-      '@babel/helper-replace-supers': 7.22.20(@babel/core@7.23.6)
-      '@babel/helper-skip-transparent-expression-wrappers': 7.22.5
-      '@babel/helper-split-export-declaration': 7.22.6
-      '@babel/plugin-syntax-decorators': 7.23.3(@babel/core@7.23.6)
-    dev: true
-
-  /@babel/plugin-syntax-decorators@7.23.3(@babel/core@7.23.6):
-    resolution: {integrity: sha512-cf7Niq4/+/juY67E0PbgH0TDhLQ5J7zS8C/Q5FFx+DWyrRa9sUQdTXkjqKu8zGvuqr7vw1muKiukseihU+PJDA==}
-    engines: {node: '>=6.9.0'}
-    peerDependencies:
-      '@babel/core': ^7.0.0-0
-    dependencies:
-      '@babel/core': 7.23.6
-      '@babel/helper-plugin-utils': 7.22.5
     dev: true
 
   /@babel/plugin-syntax-jsx@7.23.3(@babel/core@7.23.6):
@@ -1211,7 +1180,7 @@ packages:
 
   /@types/lodash@4.14.202:
     resolution: {integrity: sha512-OvlIYQK9tNneDlS0VN54LLd5uiPCBOp7gS5Z0f1mjoJYBrtStzgmJBxONW3U6OZqdtNzZPmn9BS/7WI7BFFcFQ==}
-    dev: false
+    dev: true
 
   /@types/node@18.19.3:
     resolution: {integrity: sha512-k5fggr14DwAytoA/t8rPrIz++lXK7/DqckthCmoZOKNsEbJkId4Z//BqgApXBUGrGddrigYa1oqheo/7YmW4rg==}
@@ -2939,16 +2908,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /solid-dockview@1.0.1(dockview-core@1.8.5)(solid-js@1.8.7):
-    resolution: {integrity: sha512-FoO9NkRahyKTE9WoxRzmPZFLds/Wcmxbo0yociwuYhdljWrcjJfVBOkszIlGgCE97ibHA6WcXiyE2eU1cvKcgw==}
-    peerDependencies:
-      dockview-core: ^1.8.5
-      solid-js: ^1.8.7
-    dependencies:
-      dockview-core: 1.8.5
-      solid-js: 1.8.7
-    dev: false
 
   /solid-js@1.8.7:
     resolution: {integrity: sha512-9dzrSVieh2zj3SnJ02II6xZkonR6c+j/91b7XZUNcC6xSaldlqjjGh98F1fk5cRJ8ZTkzqF5fPIWDxEOs6QZXA==}

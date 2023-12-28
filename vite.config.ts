@@ -8,9 +8,9 @@ const MonacoPlugin = (monacoEditorPlugin as any).default as typeof monacoEditorP
 
 export default defineConfig({
   plugins: [
-    // devtools({
-    //   autoname: true, // e.g. enable autoname
-    // }),
+    devtools({
+      autoname: true, // e.g. enable autoname
+    }),
     solidPlugin({}),
     UnoCSS(),
     MonacoPlugin({})

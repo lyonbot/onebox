@@ -1,21 +1,33 @@
-import { For, createMemo, createSignal } from "solid-js";
+import { For, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { useOneBox } from "../store";
 import { clsx, startMouseMove } from "yon-utils";
 import { useLocalStorage, watch } from "~/utils/solid";
 
 const LC_WIDTH = 'oneBox:sidebarWidth';
 
-export function Sidebar() {
+export function Sidebar(props: { id: string }) {
   const oneBox = useOneBox();
-  const activeFile = createMemo(() => oneBox.store.activePanel?.file);
+  const activeFile = createMemo(() => {
+    const filename = oneBox.panels.state.activePanel?.filename;
+    if (!filename) return null;
+
+    return oneBox.files.api.getControllerOf(filename)
+  });
 
   const [width, setWidth] = useLocalStorage(LC_WIDTH, x => +x! || 300);
 
   const [isResizing, setIsResizing] = createSignal(false)
+  const [hasFocus, setHasFocus] = createSignal(false)
+
+  watch(hasFocus, f => f && onCleanup(oneBox.ui.api.addActionHint(<>
+    {!!activeFile() && <div class='ob-status-actionHint'><kbd>F2</kbd>Rename</div>}
+    {!!activeFile() && <div class='ob-status-actionHint'><kbd>Del</kbd>Delete</div>}
+  </>)))
 
   return <div
+    id={props.id}
     class={clsx("ob-sidebar", { isResizing: isResizing() })}
-    style={`flex-basis: ${width()}px; display: ${oneBox.store.showSidebar ? "" : "none"}`}
+    style={`width: ${width()}px; display: ${oneBox.ui.state.showSidebar ? "" : "none"}`}
     tabIndex={0}
     onKeyDown={ev => {
       const file = activeFile()
@@ -24,19 +36,19 @@ export function Sidebar() {
         ev.preventDefault()
         if (file) {
           const newName = prompt('Rename File', file.filename);
-          if (newName) file.filename = newName;
+          if (newName) file.setFilename(newName)
         }
         return
       }
 
       if (ev.key === 'Delete' || ev.key === 'Backspace') {
         ev.preventDefault()
-        if (file) {
-          oneBox.api.deleteFile(file)
-        }
+        file?.delete()
         return
       }
     }}
+    onFocusIn={(e) => e.target === e.currentTarget && setHasFocus(true)}
+    onFocusOut={(e) => e.target === e.currentTarget && setHasFocus(false)}
   >
     <div class="ob-sidebar-resizer" onPointerDown={ev => {
       const ow = width();
@@ -50,18 +62,18 @@ export function Sidebar() {
     }}></div>
 
     <div class="ob-sidebar-files">
-      <For each={oneBox.store.files}>
+      <For each={oneBox.files.state.files}>
         {file => {
           let div!: HTMLDivElement
           const isActive = createMemo(() => file.filename === activeFile()?.filename)
-          const isOpened = createMemo(() => oneBox.store.panels.some(p => p.file.filename === file.filename))
+          const isOpened = createMemo(() => oneBox.panels.state.panels.find(p => p.filename === file.filename))
           watch(isActive, e => e && div.scrollIntoView(), true)
 
           return <div
             ref={d => div = d!}
             class={clsx('ob-sidebar-item', {
               isActive: isActive(),
-              isOpened: isOpened(),
+              isOpened: !!isOpened(),
             })}
             title={file.filename}
             draggable="true"
@@ -74,22 +86,21 @@ export function Sidebar() {
                 // mid click, close panels or delete file
                 if (isOpened()) {
                   // close panel
-                  oneBox.updateStore('panels', panels => panels.filter(p => p.file.filename !== file.filename));
+                  oneBox.panels.api.closePanel(isOpened()!.id);
                 } else {
                   // delete file
-                  oneBox.api.deleteFile(file)
+                  oneBox.files.api.getControllerOf(file.filename)!.delete()
                 }
               }
             }}
-            onClick={(ev) => {
-              const index = ev.shiftKey ? -1 : oneBox.store.panels.findIndex(p => p.file.filename === file.filename)
-              if (index === -1) {
-                oneBox.api.openFile(file, true)
-              } else {
-                oneBox.updateStore('activePanelIndex', index)
-              }
-            }}
-            onDblClick={() => oneBox.api.openFile(file, true)}
+            onClick={(ev) => oneBox.api.openFile(file.filename, ev.shiftKey)}
+            onDblClick={() => oneBox.api.openFile(file.filename, true)}
+            onMouseEnter={oneBox.ui.api.getActionHintEvForMouse([
+              <div class='ob-status-actionHint'>
+                <kbd><i class='i-ob-mouse-mid' /></kbd>
+                {isOpened() ? 'Close Editor' : <span style="color: #fca">Delete File</span>}
+              </div>
+            ])}
           >
             <div class="ob-sidebar-item-name">{file.filename}</div>
             <div class="ob-sidebar-item-actions">
@@ -97,11 +108,11 @@ export function Sidebar() {
                 class="ob-sidebar-item-action"
                 onClick={ev => {
                   ev.stopPropagation()
-                  oneBox.api.deleteFile(file)
+                  oneBox.files.api.getControllerOf(file.filename)?.delete()
                 }}
                 title={`Delete File "${file.filename}"`}
               >
-                <i class='i-mdi-trash-can text-6'></i>
+                <i class='i-mdi-trash-can w-6 h-6'></i>
               </button>
             </div>
           </div>

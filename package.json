@@ -7,7 +7,6 @@
   "type": "module",
   "devDependencies": {
     "@types/lodash": "^4.14.202",
-    "@babel/plugin-proposal-decorators": "^7.23.6",
     "@types/node": "^18.19.3",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
@@ -28,7 +27,6 @@
     "dockview-core": "^1.8.5",
     "lodash": "^4.17.21",
     "monaco-editor": "^0.45.0",
-    "solid-dockview": "^1.0.1",
     "solid-js": "^1.8.7",
     "yon-utils": "^0.1.17"
   },

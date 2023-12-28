@@ -14,7 +14,52 @@ textarea {
   padding: .25em .5em;
 }
 
-div.solid-dockview-panel-content {
+#ob-app {
+  display: grid;
+  grid-template:
+    'sidebar   editZone'
+    'statusBar statusBar';
+  grid-template-rows: 1fr auto;
+  grid-template-columns: auto 1fr;
+  height: 100vh;
+}
+
+#ob-sidebar {
+  grid-area: sidebar;
+}
+
+#ob-editZone {
+  grid-area: editZone;
+  position: relative;
+  min-width: 0;
+}
+
+#ob-statusBar {
+  grid-area: statusBar;
+  border-top: 1px solid #999;
+  background-color: #777;
+  color: #f5f5f5;
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+
+  kbd {
+    display: inline-block;
+    font-size: 0.86em;
+    margin: 0 2px;
+    background: #555;
+    border-radius: 2px;
+    padding: 1px 4px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+}
+
+.ob-status-actionHint {
+  margin-right: 8px;
+}
+
+.ob-dockview-panel-content {
   display: block;
   position: relative;
   height: 100%;
