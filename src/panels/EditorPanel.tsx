@@ -7,7 +7,7 @@ import { Lang, LangDescriptions, guessLang } from "~/utils/langsBase";
 import { map } from "lodash";
 import { AdaptedPanelProps } from './adaptor';
 
-export function FilePanel(props: AdaptedPanelProps) {
+export default function EditorPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
   const file = oneBox.files.api.getControllerOf(props.params.filename)!; // assuming not change
   const panelId = props.id
@@ -72,6 +72,10 @@ export function FilePanel(props: AdaptedPanelProps) {
     const ext = description.extname || '.txt';
 
     const cursor = editor.getSelections()?.map(x => x.toJSON())
+    const scrollPos: monaco.editor.INewScrollPosition = {
+      scrollLeft: editor.getScrollLeft(),
+      scrollTop: editor.getScrollTop(),
+    }
 
     batch(() => {
       file.setFilename(file.filename.replace(/\.[^.]+$/, ext));
@@ -81,6 +85,7 @@ export function FilePanel(props: AdaptedPanelProps) {
     setTimeout(() => {
       editor.focus()
       editor.setSelections(cursor as any)
+      editor.setScrollPosition(scrollPos, monaco.editor.ScrollType.Immediate)
     }, 100)
   }
 

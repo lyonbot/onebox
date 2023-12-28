@@ -9,7 +9,8 @@ export type PanelsStore = ReturnType<typeof createPanelsStore>
 export interface UIPanel {
   id: string
   filename: string
-  panelApi?: DockviewPanelApi
+  panelType?: string
+  panelApi?: () => DockviewPanelApi
 }
 
 export function createPanelsStore(/*root: () => OneBox*/) {
@@ -69,7 +70,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
             params: panelData
           })
 
-          update('panels', index(), 'panelApi', panel.api)
+          update('panels', index(), { panelApi: () => panel.api })
 
           onCleanup(() => {
             const p = dockview.getGroupPanel(panel.id)

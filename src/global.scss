@@ -155,6 +155,7 @@ div.dv-resize-container {
 
   &.isActive {
     background-color: #e5e5e5;
+    font-weight: 500;
 
     .ob-sidebar:focus & {
       background-color: #e5e5ff;
@@ -180,9 +181,12 @@ div.dv-resize-container {
   display: flex;
   gap: 4px;
   visibility: hidden;
+  overflow: hidden;
+  max-width: 0;
 
   .ob-sidebar-item:hover & {
     visibility: visible;
+    max-width: 50%;
   }
 }
 

@@ -10,6 +10,7 @@ export const enum Lang {
   URLENCODED = 'urlencoded', // pure urlencoded, like foo%2Fbar
   TOML = 'toml', // key value, ini, toml, foo=bar
   STRING_LITERAL = 'string_literal',
+  MARKDOWN = 'markdown',
 }
 
 export interface LangDescription {
@@ -21,6 +22,7 @@ export interface LangDescription {
 
 export const LangDescriptions: Record<Lang, LangDescription> = {
   unknown: { name: '0. Plain Unknown Text' },
+  markdown: { name: 'Markdown', extname: '.md', mime: 'text/markdown', monacoLanguage: 'markdown' },
   yaml: { name: 'YAML', extname: '.yaml', mime: 'text/yaml', monacoLanguage: 'yaml' },
   json: { name: 'JSON', extname: '.json', mime: 'application/json', monacoLanguage: 'json' },
   javascript: { name: 'JavaScript', extname: '.jsx', mime: 'application/javascript', monacoLanguage: 'javascript' },
@@ -39,6 +41,10 @@ export function guessLang(str: string): Lang {
   if (/^.{0,10}['"]/.test(str)) {
     // earlier than json
     return Lang.STRING_LITERAL;
+  }
+
+  if (/^#{1,6} .+\n\n/.test(str) || /^(- |\d+\. )/m.test(str)) {
+    return Lang.MARKDOWN;
   }
 
   if (str.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(str)) {

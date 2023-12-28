@@ -1,4 +1,4 @@
-import { For, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { For, createMemo, createSignal, onCleanup } from "solid-js";
 import { useOneBox } from "../store";
 import { clsx, startMouseMove } from "yon-utils";
 import { useLocalStorage, watch } from "~/utils/solid";

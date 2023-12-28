@@ -1,9 +1,9 @@
 import { DockviewPanelApi, GroupPanelContentPartInitParameters, IContentRenderer, } from "dockview-core";
-import { JSX, createEffect, createSignal, getOwner, runWithOwner } from "solid-js";
+import { JSX, createEffect, createSignal, getOwner, lazy, runWithOwner } from "solid-js";
 import { Portal } from "solid-js/web";
 import { OneBox } from "~/store";
 import { UIPanel } from "~/store/panels";
-import { FilePanel } from "./FilePanel";
+import { panelSolidComponents } from "./panels";
 
 export interface AdaptedPanelProps {
   id: string;
@@ -23,12 +23,16 @@ export function getDockviewContentAdaptor(oneBox: OneBox, owner = getOwner()) {
         createEffect(() => {
           if (!this.$isActive[0]()) return null
           const id = parameters.api.id
+          const panelData = oneBox.panels.state.panels.find(x => x.id === id) // assuming the ref never change
+          if (!panelData) return null
+
+          const PanelComponent = lazy(panelSolidComponents[panelData.panelType || 'default'])
 
           return <Portal mount={this.element} ref={x => { x.className = 'ob-dockview-panel-content' }}>
-            <FilePanel
+            <PanelComponent
               id={id}
               api={parameters.api}
-              params={oneBox.panels.state.panels.find(x => x.id === id)!}
+              params={panelData}
               isActive={oneBox.panels.state.activePanelId === id}
             />
           </Portal>

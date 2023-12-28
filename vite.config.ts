@@ -7,6 +7,7 @@ import { defineConfig } from "vite";
 const MonacoPlugin = (monacoEditorPlugin as any).default as typeof monacoEditorPlugin
 
 export default defineConfig({
+  base: './',
   plugins: [
     devtools({
       autoname: true, // e.g. enable autoname
