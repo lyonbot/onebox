@@ -38,7 +38,19 @@ export function OneBoxDockview() {
         adaptor: getDockviewContentAdaptor(oneBox, owner),
       },
       createLeftHeaderActionsElement: () => simpleRendererAdaptor(() => (
-        <button class="ob-tab-createBtn" onClick={() => oneBox.api.createEmptyFile()}>
+        <button
+          class="ob-tab-createBtn"
+          onClick={(ev) => {
+            ev.preventDefault()
+            oneBox.api.createEmptyFile(undefined, (ev.metaKey || ev.ctrlKey || ev.shiftKey) ? 'right' : 'within')
+          }}
+          onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(
+            <div class='ob-status-actionHint'>
+              <kbd>Cmd+<i class='i-ob-mouse-left' /></kbd>
+              Create and Open Aside
+            </div>
+          )}
+        >
           <i class="i-mdi-plus"></i>
           New File
         </button>

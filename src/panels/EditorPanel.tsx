@@ -28,6 +28,9 @@ export default function EditorPanel(props: AdaptedPanelProps) {
   // dirty work on the tab
   setTimeout(() => {
     const tabEl = (props.api as any).panel.view.tab.element as HTMLElement;
+    if (tabEl.dataset.obCrafted) return
+    tabEl.dataset.obCrafted = "true"
+
     const handleMouseDown = (ev: MouseEvent) => {
       if (ev.button === 1) {
         ev.preventDefault()
@@ -162,7 +165,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
               id: 'oneBox.close',
               label: 'Close Panel',
               run: () => void removePanel(),
-              keybindings: []
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyW, monaco.KeyMod.CtrlCmd | monaco.KeyCode.F4]
             })
 
             editor.addAction({

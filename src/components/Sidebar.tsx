@@ -93,14 +93,23 @@ export function Sidebar(props: { id: string }) {
                 }
               }
             }}
-            onClick={(ev) => oneBox.api.openFile(file.filename, ev.shiftKey)}
-            onDblClick={() => oneBox.api.openFile(file.filename, true)}
-            onMouseEnter={oneBox.ui.api.getActionHintEvForMouse([
+            onClick={(ev) => {
+              if (ev.metaKey || ev.ctrlKey || ev.shiftKey) return // TODO: make multiple selection
+              oneBox.api.openFile(file.filename)
+            }}
+            onDblClick={(ev) => {
+              oneBox.api.openFile(file.filename, (ev.metaKey || ev.ctrlKey) ? 'right' : 'within')
+            }}
+            onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(<>
               <div class='ob-status-actionHint'>
                 <kbd><i class='i-ob-mouse-mid' /></kbd>
-                {isOpened() ? 'Close Editor' : <span style="color: #fca">Delete File</span>}
+                {isOpened() ? 'Close Editor' : <span class="text-red-2">Delete File</span>}
               </div>
-            ])}
+              <div class='ob-status-actionHint'>
+                <kbd>Cmd+<i class='i-ob-mouse-left' />x2</kbd>
+                Open Aside
+              </div>
+            </>)}
           >
             <div class="ob-sidebar-item-name">{file.filename}</div>
             <div class="ob-sidebar-item-actions">
@@ -112,7 +121,7 @@ export function Sidebar(props: { id: string }) {
                 }}
                 title={`Delete File "${file.filename}"`}
               >
-                <i class='i-mdi-trash-can w-6 h-6'></i>
+                <i class={clsx('i-mdi-trash-can w-6 h-6', !isOpened() && 'text-red-8 hover:text-red-6')}></i>
               </button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { DockviewComponent, DockviewPanelApi } from "dockview-core"
-import { createEffect, mapArray, onCleanup } from "solid-js"
+import { batch, createEffect, mapArray, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { watch } from "~/utils/solid"
 import { uniqueId } from "lodash"
@@ -38,9 +38,25 @@ export function createPanelsStore(/*root: () => OneBox*/) {
   })
 
   const api = {
-    openPanel(panel: Omit<UIPanel, 'id'> & { id?: string }) {
+    openPanel(panel: Omit<UIPanel, 'id'> & { id?: string }, direction?: 'within' | 'left' | 'right' | 'above' | 'below') {
       const id = panel.id || uniqueId('panel-')
-      update('panels', x => [...x, { ...panel, id }])
+
+      batch(() => {
+        update('panels', x => [...x, { id, ...panel }])
+        if (direction && direction !== 'within' && state.activePanel) {
+          state.dockview.addPanel({
+            id,
+            component: 'adaptor',
+            params: state.panels.at(-1)!,
+            position: {
+              referencePanel: state.activePanelId,
+              referenceGroup: state.dockview.activeGroup?.id,
+              direction
+            }
+          })
+        }
+      })
+
       return id
     },
     closePanel(id: string) {

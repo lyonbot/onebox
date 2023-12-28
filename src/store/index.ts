@@ -15,17 +15,18 @@ function createOneBoxStore() {
   const ui = createUIStore()
 
   const api = {
-    createEmptyFile(filename?: string) {
+    createEmptyFile(filename?: string, forceNewPanel?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
       const f = files.api.createFile(filename)
-      panels.api.openPanel({ filename: f.filename })
+      panels.api.openPanel({ filename: f.filename }, forceNewPanel || 'within')
 
       return f
     },
-    openFile(filename: string, forceNewPanel?: boolean) {
+    openFile(filename: string, forceNewPanel?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
       const existingPanel = !forceNewPanel && panels.state.panels.find(p => p.filename === filename)
       if (!existingPanel) {
-        panels.api.openPanel({ filename })
+        panels.api.openPanel({ filename }, forceNewPanel || 'within')
       } else {
+        if (panels.state.activePanel?.filename === filename) return // already active, in one panel
         panels.update('activePanelId', existingPanel.id)
       }
     }
