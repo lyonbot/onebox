@@ -17,7 +17,12 @@ export default function App() {
   const oneBox = useOneBox()
 
   onMount(() => {
-    // oneBox.api.createTextFileWithContent('test.json5', '{\n "foo": 123,\n bar: 456,\n}');
+    window.addEventListener('keydown', ev => {
+      if ((ev.metaKey || ev.ctrlKey) && !ev.shiftKey && ev.key == 'b') {
+        ev.preventDefault()
+        oneBox.ui.api.toggleSidebar()
+      }
+    });
   });
 
   return (
