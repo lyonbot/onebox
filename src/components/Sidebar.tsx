@@ -136,9 +136,24 @@ export function Sidebar(props: { id: string }) {
           oneBox.api.resetProject()
           oneBox.api.saveLastProject()
         }
-      }}>Reset Project</a>
+      }} title="Reset Project">
+        <i class="i-mdi-delete-sweep"></i>
+      </a>
 
-      <a href="https://github.com/lyonbot/onebox" target="_blank">GitHub</a>
+      <a href="https://github.com/lyonbot/onebox" target="_blank" title="GitHub">
+        <i class="i-mdi-github"></i>
+      </a>
+
+      <a href="#" onClick={e => {
+        e.preventDefault();
+        oneBox.ui.api.toggleDarkMode()
+      }} title="Toggle Dark Mode">
+        {
+          oneBox.ui.state.darkMode
+            ? <i class='i-mdi-weather-sunny' />
+            : <i class='i-mdi-weather-night' />
+        }
+      </a>
     </div>
   </div>
 }

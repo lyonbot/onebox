@@ -4,7 +4,7 @@ import { useOneBox } from "../store";
 import { Show, batch, createEffect, createMemo, createSignal, onCleanup, } from "solid-js";
 import { watch } from "~/utils/solid";
 import { Lang, LangDescriptions, guessLang } from "~/utils/langsBase";
-import { map } from "lodash";
+import { entries, map } from "lodash";
 import { AdaptedPanelProps } from './adaptor';
 
 export default function EditorPanel(props: AdaptedPanelProps) {
@@ -25,7 +25,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
     oneBox.panels.api.closePanel(panelId)
   }
 
-  // dirty work on the tab
+  // #region Tabs
   setTimeout(() => {
     const tabEl = (props.api as any).panel.view.tab.element as HTMLElement;
     if (tabEl.dataset.obCrafted) return
@@ -58,9 +58,9 @@ export default function EditorPanel(props: AdaptedPanelProps) {
     ]))
   })
   createEffect(() => props.api.setTitle(file.filename))
+  // #endregion
 
-  // #region lang
-
+  // #region Lang
   const guessedLang = createMemo(() => {
     if (file.lang !== Lang.UNKNOWN) return file.lang;
     return guessLang(file.content)
@@ -111,8 +111,8 @@ export default function EditorPanel(props: AdaptedPanelProps) {
   return (
     <div class="flex flex-col h-full">
       <div class="ob-panel-toolbar">
-        <select value={file.lang} onChange={e => setLang(e.currentTarget.value as Lang)}>
-          {map(LangDescriptions, (desc, lang) => <option value={lang}>{desc.name}</option>)}
+        <select class="border-none" value={file.lang} onChange={e => setLang(e.currentTarget.value as Lang)}>
+          {map(entries(LangDescriptions), ([lang, desc], index) => <option value={lang}>{index}. {desc.name}</option>)}
         </select>
 
         <Show when={guessedLang() !== file.lang}>
@@ -129,6 +129,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
         options={{
           minimap: {},
           lineNumbersMinChars: 2,
+          padding: { top: 4, bottom: 0 },
         }}
         onSetup={e => {
           editor = e

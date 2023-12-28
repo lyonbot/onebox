@@ -7,6 +7,8 @@ import _ from 'lodash'
 import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
+import { clsx } from "yon-utils";
+import './monaco/setup'
 
 const global = window as any
 global.monaco = monaco
@@ -26,7 +28,7 @@ export default function App() {
   });
 
   return (
-    <div id="ob-app">
+    <div id="ob-app" class={clsx(oneBox.ui.state.darkMode && 'darkMode')}>
       <Sidebar id="ob-sidebar" />
       <div id="ob-editZone"><EditZone /></div>
       <StatusBar id="ob-statusBar" />

@@ -21,11 +21,11 @@ export interface LangDescription {
 }
 
 export const LangDescriptions: Record<Lang, LangDescription> = {
-  unknown: { name: '0. Plain Unknown Text' },
+  unknown: { name: 'Unknown Text' },
   markdown: { name: 'Markdown', extname: '.md', mime: 'text/markdown', monacoLanguage: 'markdown' },
   yaml: { name: 'YAML', extname: '.yaml', mime: 'text/yaml', monacoLanguage: 'yaml' },
   json: { name: 'JSON', extname: '.json', mime: 'application/json', monacoLanguage: 'json' },
-  javascript: { name: 'JavaScript', extname: '.jsx', mime: 'application/javascript', monacoLanguage: 'javascript' },
+  javascript: { name: 'JavaScript', extname: '.js', mime: 'application/javascript', monacoLanguage: 'javascript' },
   typescript: { name: 'TypeScript', extname: '.tsx', mime: 'application/typescript', monacoLanguage: 'typescript' },
   base64: { name: 'Base64' },
   hex: { name: 'Hex' },

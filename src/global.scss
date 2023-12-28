@@ -14,6 +14,8 @@ textarea {
   padding: .25em .5em;
 }
 
+// dark mode
+
 #ob-app {
   display: grid;
   grid-template:
@@ -22,6 +24,15 @@ textarea {
   grid-template-rows: 1fr auto;
   grid-template-columns: auto 1fr;
   height: 100vh;
+
+  &.darkMode {
+    filter: contrast(0.9) saturate(0.7) invert(1) hue-rotate(180deg);
+
+    #ob-statusBar {
+      filter: brightness(0.7) invert(1);
+      background: #000;
+    }
+  }
 }
 
 #ob-sidebar {
@@ -109,6 +120,13 @@ div.dv-resize-container {
   display: flex;
   align-items: center;
   gap: 4px;
+  opacity: 0.7;
+
+  &:focus,
+  &:focus-within,
+  &:hover {
+    opacity: 1;
+  }
 }
 
 // sidebars
