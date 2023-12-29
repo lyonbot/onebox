@@ -93,7 +93,7 @@ function createOneBoxStore() {
     saveLastProject: debounce(async () => {
       const data = api.exportProject()
       await localForage.setItem(LS_LAST_PROJECT_DATA, data)
-    }, 500, { leading: true, trailing: true }),
+    }, 2000, { leading: true, trailing: true }),
     async loadLastProject() {
       const projectData = await localForage.getItem<ExportedProjectData>(LS_LAST_PROJECT_DATA)
       if (!projectData) return false
@@ -119,7 +119,7 @@ function createOneBoxStore() {
 
       file.setFilename(newName)
     },
-    downloadCurrentFile() {
+    async downloadCurrentFile() {
       const file = files.state.files.find(f => f.filename === panels.state.activePanel?.filename)
       if (!file) return
 

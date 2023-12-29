@@ -2,18 +2,33 @@
   margin-top: 10vh;
   margin-bottom: auto;
   @apply p-6 gap-4 flex flex-col bg-white rounded shadow-xl;
-  border: 1px solid #eee;
+  @apply border border-solid border-gray-2;
 }
 
 .ob-promptBox-input {
   width: 60vw;
   max-width: 600px;
-  border: 1px solid #ccc;
   border-radius: 4px;
-  height: 2em;
+  @apply px-4 py-3 border border-solid border-gray-2;
 
   &:focus {
     outline: none;
-    border-color: #aaa;
+    @apply border-gray-3;
+  }
+}
+
+.ob-promptBox-enum {
+  @apply m--2;
+}
+
+.ob-promptBox-enum-item {
+  @apply px-4 py-2 rounded cursor-pointer m-2;
+
+  &:hover {
+    @apply bg-gray-1;
+  }
+
+  &.isActive {
+    @apply bg-gray-2;
   }
 }

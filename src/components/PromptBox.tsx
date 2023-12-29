@@ -1,16 +1,28 @@
-import { JSXElement, createSignal } from "solid-js";
+import { Accessor, For, JSXElement, Show, createEffect, createMemo, createSignal } from "solid-js";
 import { nextTick, watch } from "~/utils/solid";
 
 export interface PromptRequest {
   title: JSXElement | (() => JSXElement)
   default?: string
+  enumOptions?: (input: Accessor<string>) => Array<{ value: string, title?: JSXElement | (() => JSXElement) }>
   onMount?: (env: { inputBox: HTMLInputElement }) => void
 }
 
 export function PromptBox(props: { req: PromptRequest, onResolve: (value: string | null) => void }) {
   const [value, setValue] = createSignal<string>('')
+
+  const enumOptions = createMemo(() => props.req.enumOptions?.(value))
+  const [enumIndex, setEnumIndex] = createSignal(0)
+
   watch(() => props.req, req => {
     setValue(req.default || '');
+    setEnumIndex(0);
+  })
+
+  createEffect(() => {
+    const max = Math.max(enumOptions()?.length || 0 - 1, 0)
+    if (enumIndex() < 0) setEnumIndex(0)
+    else if (enumIndex() > max) setEnumIndex(max)
   })
 
   const [inputBox, setInputBox] = createSignal<HTMLInputElement | null>(null)
@@ -38,13 +50,47 @@ export function PromptBox(props: { req: PromptRequest, onResolve: (value: string
           ref={setInputBox}
           onInput={ev => setValue(ev.currentTarget.value)}
           onKeyDown={ev => {
+            const enums = enumOptions()
             if (ev.key === 'Enter') {
-              props.onResolve(value())
+              if (enums) {
+                const item = enums[enumIndex()]
+                if (item) props.onResolve(item.value)
+              } else {
+                props.onResolve(value())
+              }
             } else if (ev.key === 'Escape') {
               props.onResolve(null)
+            } else if (enums) {
+              // Arrow Up + Down
+              if (ev.key === 'ArrowUp') {
+                setEnumIndex(v => v > 0 ? v - 1 : enumOptions()!.length - 1);
+                ev.preventDefault()
+              }
+              else if (ev.key === 'ArrowDown') {
+                setEnumIndex(v => v < enumOptions()!.length - 1 ? v + 1 : 0);
+                ev.preventDefault()
+              }
             }
           }}
         />
+
+        <Show when={enumOptions()}>
+          <div class="ob-promptBox-enum">
+            <For each={enumOptions()!} >
+              {((item, index) => (
+                <div
+                  classList={{
+                    'ob-promptBox-enum-item': true,
+                    'isActive': index() === enumIndex(),
+                  }}
+                  onClick={() => props.onResolve(item.value)}
+                >
+                  {item.title as any || item.value}
+                </div>
+              ))}
+            </For>
+          </div>
+        </Show>
 
       </div>
     </div>
