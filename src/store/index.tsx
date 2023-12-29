@@ -1,16 +1,16 @@
 import JSZip from 'jszip'
 import localForage from 'localforage'
-import { batch, createRoot, createSignal, getOwner } from 'solid-js'
+import { JSXElement, batch, createRoot, createSignal, getOwner } from 'solid-js'
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
 import { watch } from '~/utils/solid'
 import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
 import { downloadFile } from '~/utils/files'
-import { Lang } from '~/utils/lang'
+import { Lang, LangDescriptions } from '~/utils/lang'
 import { Buffer } from "buffer";
-import { Nil } from 'yon-utils'
-import { extname } from '~/utils/langUtils'
+import { Fn, Nil } from 'yon-utils'
+import { extname, guessLangFromContent } from '~/utils/langUtils'
 
 export type OneBox = ReturnType<typeof createOneBoxStore>
 
@@ -38,6 +38,9 @@ function createOneBoxStore() {
   const ui = createUIStore()
 
   const api = {
+    getCurrentFilename() {
+      return panels.state.activePanel?.filename || ''
+    },
     createEmptyFile(filename?: string, forceNewPanel?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
       const file = files.api.createFile({ filename })
       panels.api.openPanel({ filename: file.filename }, forceNewPanel || 'within')
@@ -49,7 +52,7 @@ function createOneBoxStore() {
       if (!existingPanel) {
         panels.api.openPanel({ filename }, forceNewPanel || 'within')
       } else {
-        if (panels.state.activePanel?.filename === filename) return // already active, in one panel
+        if (api.getCurrentFilename() === filename) return // already active, in one panel
         panels.update('activePanelId', existingPanel.id)
       }
     },
@@ -119,13 +122,51 @@ function createOneBoxStore() {
 
       file.setFilename(newName)
     },
+    async interactiveSummonAction(filename: string | Nil) {
+      const file = files.api.getControllerOf(filename)
+      if (!file) return
+
+      const actions: { title?: JSXElement | (() => JSXElement), value: string, run: Fn }[] = [];
+
+      const guessTo = (file.lang === Lang.UNKNOWN) && guessLangFromContent(file.content)
+      if (guessTo && guessTo !== Lang.UNKNOWN) {
+        const desc = LangDescriptions[guessTo]
+        actions.push({
+          title: () => <div><i class="i-mdi-thought-bubble"></i> Set Language to <b>{desc.name}</b></div>,
+          value: 'guessLang',
+          run() {
+            file.setLang(guessTo)
+          },
+        })
+      }
+
+      if (file.lang === Lang.MARKDOWN) {
+        actions.push({
+          title: () => <div><i class="i-mdi-markdown"></i> Preview Markdown</div>,
+          value: 'preview markdown',
+          run() {
+            panels.api.openPanel({ panelType: 'markdownPreview', filename: file.filename }, 'right')
+          },
+        })
+      }
+
+      ui.api.prompt("Action", {
+        enumOptions(input) {
+          return actions
+        },
+      }).then(value => {
+        const action = actions.find(a => a.value === value)
+        if (action) action.run()
+      })
+    },
+
     async downloadCurrentFile() {
-      const file = files.state.files.find(f => f.filename === panels.state.activePanel?.filename)
+      const currentFilename = api.getCurrentFilename()
+      const file = files.state.files.find(f => f.filename === currentFilename)
       if (!file) return
 
       downloadFile(file.filename, file.contentBinary || file.content)
     },
-
     async downloadCurrentProject() {
       const name = await ui.api.prompt('Enter file name (without .zip)', { default: title() })
       if (!name) return

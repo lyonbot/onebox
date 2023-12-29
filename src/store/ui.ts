@@ -54,12 +54,15 @@ export function createUIStore() {
       if (state.promptRequest) state.promptRequest[1](null);
 
       return new Promise(resolve => {
+        const actEl = document.activeElement as HTMLElement | null;
+
         const req: PromptRequest = {
           title,
           ...opts,
         }
         update('promptRequest', [req, (value) => {
           update('promptRequest', null);
+          actEl?.focus?.()
           resolve(value);
         }]);
       })

@@ -7,9 +7,9 @@ import _ from 'lodash'
 import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
-import { clsx, modKey } from "yon-utils";
+import { clsx, modKey, getSearchMatcher } from "yon-utils";
 import './monaco/setup'
-import { scanFiles } from "./utils/files";
+import { guessFileNameType, scanFiles } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
 import { VTextFileController } from "./store/files";
 import { Buffer } from "buffer";
@@ -42,7 +42,65 @@ export default function App() {
         oneBox.api.downloadCurrentProject()
         return
       }
+
+      if (modKey(ev) === modKey.Mod && ev.code == 'KeyP') {
+        ev.preventDefault()
+        const files = oneBox.files.state.files;
+        if (files.length) {
+          const names = files.map(f => f.filename)
+          oneBox.prompt(null, {
+            enumOptions(input) {
+              return getSearchMatcher(input()).filter(names).map(name => ({ label: name, value: name }))
+            },
+          }).then(filename => {
+            if (filename) oneBox.api.openFile(filename)
+          })
+        }
+        return
+      }
     });
+
+    window.addEventListener('paste', async ev => {
+      if (ev.clipboardData?.types.includes('Files')) {
+        ev.preventDefault()
+        ev.stopPropagation()
+
+        // dropped files
+        const imported = await importFilesFromEvent(ev.clipboardData);
+
+        // paste filePath into editor; or open first 3 files if no editor focused
+        const editor = oneBox.panels.state.activeMonacoEditor
+        const file = oneBox.files.api.getControllerOf(oneBox.api.getCurrentFilename())
+        if (editor && file) {
+          // paste the urls into file
+          let convert = (filename: string) => filename
+          if (file.lang === 'markdown') {
+            convert = filename => {
+              const url = `./${filename}`
+              const guessType = guessFileNameType(filename)
+
+              if (guessType === 'image') return `![${filename}](${url})`
+              if (guessType === 'video') return `<video src="${url}" controls></video>`
+              if (guessType === 'audio') return `<audio src="${url}" controls></audio>`
+
+              return `[${filename}](${url})`
+            }
+          }
+
+          const text = imported.map(x => x.filename).map(convert).join('\n')
+          editor.executeEdits('paste', [{
+            range: editor.getSelection()!,
+            text,
+          }])
+        } else {
+          // open first 3 files
+          imported.slice(0, 3).forEach(file => {
+            oneBox.api.openFile(file.filename, 'right')
+          })
+        }
+        return
+      }
+    }, true)
   });
 
   const [isAboutDropFiles, setIsAboutDropFiles] = createSignal(false)
@@ -66,32 +124,18 @@ export default function App() {
 
         div.addEventListener('drop', async (ev) => {
           dragBug = 0;
+          setIsAboutDropFiles(false)
 
           if (ev.dataTransfer?.types.includes('Files')) {
             ev.preventDefault()
             ev.stopPropagation()
-            setIsAboutDropFiles(false)
 
             // dropped files
-            const imported = [] as VTextFileController[]
-            for (const rawItem of ev.dataTransfer.items) {
-              const handle = rawItem.webkitGetAsEntry?.()
-              if (handle) {
-                for await (const [name, file] of scanFiles(handle)) {
-                  const isTextFile = file.type.startsWith('text/') || file.type.includes('/json')
-                  imported.push(oneBox.files.api.createFile({
-                    filename: name,
-                    content: isTextFile ? await file.text() : '',
-                    contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),
-                    lang: guessLangFromName(name),
-                  }))
-                }
-              }
-            }
+            const imported = await importFilesFromEvent(ev.dataTransfer);
 
             // open first 3 files
             imported.slice(0, 3).forEach(file => {
-              oneBox.api.openFile(file.filename)
+              oneBox.api.openFile(file.filename, 'right')
             })
           }
         }, true)
@@ -113,6 +157,33 @@ export default function App() {
       </Show>
     </div>
   );
+
+  async function importFilesFromEvent(dataTransfer: DataTransfer) {
+    const imported = [] as VTextFileController[];
+    for (const rawItem of dataTransfer.items) {
+      const handle = rawItem.webkitGetAsEntry?.();
+      if (handle) {
+        for await (const [name, file] of scanFiles(handle)) {
+          await pushFile(file, name);
+        }
+      } else {
+        // maybe just a file from screenshot
+        const file = rawItem.getAsFile();
+        if (file) await pushFile(file, file.name);
+      }
+    }
+    return imported;
+
+    async function pushFile(file: File, name: string) {
+      const isTextFile = file.type.startsWith('text/') || file.type.includes('/json');
+      imported.push(oneBox.files.api.createFile({
+        filename: name,
+        content: isTextFile ? await file.text() : '',
+        contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),
+        lang: guessLangFromName(name),
+      }));
+    }
+  }
 }
 
 function EditZone() {

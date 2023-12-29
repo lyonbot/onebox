@@ -6,6 +6,10 @@ import { guessFileNameType } from '~/utils/files';
 interface BinaryDisplayProps {
   buffer: Buffer
   filename: string
+  objectURL?: string
+
+  style?: any
+  class?: string
 }
 
 export function BinaryDisplay(props: BinaryDisplayProps) {
@@ -13,8 +17,15 @@ export function BinaryDisplay(props: BinaryDisplayProps) {
 
   const guessedType = createMemo(() => guessFileNameType(props.filename))
   const objectUrl = createMemo(() => {
+    // use VTextFileController's cache
+    if (!/\.pdf$/i.test(props.filename) && props.objectURL) return props.objectURL
+
+    // regular way to generate a url
     const ext = props.filename.split('.').pop()
-    const blob = new Blob([props.buffer], { type: `${guessedType()}/${ext}` })
+    let t = guessedType() as string
+    if (t === 'unknown') t = 'application';   // stupid but works on pdf
+
+    const blob = new Blob([props.buffer], { type: `${t}/${ext}` })
     const url = URL.createObjectURL(blob)
 
     onCleanup(() => URL.revokeObjectURL(url))
@@ -22,7 +33,7 @@ export function BinaryDisplay(props: BinaryDisplayProps) {
     return url
   })
 
-  return <div class='flex flex-col items-center overflow-auto'>
+  return <div class={'flex flex-col items-center overflow-auto ' + (props.class || '')} style={props.style}>
     <div class='text-xl'>{props.filename}</div>
     <div class='text-sm'>{props.buffer.length} bytes</div>
     <div class='mb-8'>
@@ -34,15 +45,19 @@ export function BinaryDisplay(props: BinaryDisplayProps) {
 
     <Switch>
       <Match when={guessedType() === 'image'}>
-        <img src={objectUrl()} class="ob-binaryDisplay-preview max-w-full" />
+        <img src={objectUrl()} class="ob-binaryDisplay-preview ob-darkMode-intact max-w-full" />
       </Match>
 
       <Match when={guessedType() === 'audio'}>
-        <audio controls src={objectUrl()} class='ob-binaryDisplay-preview w-80%' />
+        <audio controls src={objectUrl()} class='ob-binaryDisplay-preview ob-darkMode-intact w-80%' />
       </Match>
 
       <Match when={guessedType() === 'video'}>
-        <video controls src={objectUrl()} class="ob-binaryDisplay-preview max-w-full" />
+        <video controls src={objectUrl()} class="ob-binaryDisplay-preview ob-darkMode-intact max-w-full" />
+      </Match>
+
+      <Match when={props.filename.endsWith('.pdf')}>
+        <iframe class="ob-binaryDisplay-preview w-full flex-1 border-none" src={objectUrl()} />
       </Match>
     </Switch>
   </div>

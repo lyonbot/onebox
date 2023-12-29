@@ -7,6 +7,7 @@ import { watch } from '~/utils/solid'
 import { OneBox } from '.'
 import { extname, guessLangFromName } from '~/utils/langUtils'
 import { Buffer } from "buffer";
+import { Nil } from 'yon-utils'
 
 export type FilesStore = ReturnType<typeof createFilesStore>
 
@@ -23,11 +24,13 @@ export interface VTextFileController {
   readonly content: string
   readonly contentBinary?: Buffer | false
   readonly lang: Lang
+
   readonly model: monaco.editor.ITextModel
+  readonly objectURL: string
 
   setFilename(filename: string): string
   setContent(content: string): void
-  setLang(lang: Lang): void
+  setLang(lang: Lang, updateExtname?: boolean): void
   setContentBinary(content: Buffer | false): void
   notifyBinaryContentChanged(): void
 
@@ -65,6 +68,14 @@ export function createFilesStore(root: () => OneBox) {
         return model
       })
 
+      const objectURL = createMemo(() => {
+        const blob = new Blob([file.contentBinary || file.content], { type: 'application/octet-stream' })
+        const url = URL.createObjectURL(blob)
+
+        onCleanup(() => URL.revokeObjectURL(url))
+        return url
+      })
+
       return {
         get content() { return file.content },
         setContent(value: string) { updateFile('content', value) },
@@ -74,7 +85,15 @@ export function createFilesStore(root: () => OneBox) {
         notifyBinaryContentChanged() { updateFile('contentBinary', (b) => (b as Buffer).subarray()) }, // make a different wrapper to same memory
 
         get lang() { return file.lang },
-        setLang(value: Lang) { updateFile('lang', value) },
+        setLang(lang, updateExtname) {
+          updateFile('lang', lang)
+
+          if (updateExtname) {
+            const description = LangDescriptions[lang];
+            const ext = description.extname || '.txt';
+            this.setFilename(this.filename.replace(/(\.\w+)?$/, ext))
+          }
+        },
 
         get filename() { return file.filename },
         setFilename(value: string) {
@@ -98,6 +117,7 @@ export function createFilesStore(root: () => OneBox) {
         },
 
         get model() { return model() },
+        get objectURL() { return objectURL() },
 
         delete() {
           update('files', files => files.filter(f => f.filename !== file.filename))
@@ -117,7 +137,7 @@ export function createFilesStore(root: () => OneBox) {
   }
 
   const api = {
-    getControllerOf(filename?: string) {
+    getControllerOf(filename: string | Nil) {
       if (!filename) return undefined
       return filesLUT()[filename]
     },

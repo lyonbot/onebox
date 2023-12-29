@@ -4,11 +4,18 @@ export function StatusBar(props: { id: string }) {
   const oneBox = useOneBox()
 
   return <div id={props.id}>
+    <button class="ob-status-button" title="Toggle Sidebar"
+      onClick={() => oneBox.ui.api.toggleSidebar()}
+      onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(<>
+        <div class='ob-status-actionHint'>
+          <kbd>Cmd+B</kbd>
+          Toggle Sidebar
+        </div>
+      </>)}
+    >
+      <i class="i-mdi-dock-left"></i>
+    </button>
     {oneBox.ui.state.actionHints}
-    {/* 
-    <i class="i-ob-mouse-left"></i>
-    <i class="i-ob-mouse-mid"></i>
-  <i class="i-ob-mouse-right"></i> */}
     <br />
   </div>
 }

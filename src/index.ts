@@ -2,6 +2,7 @@ import { render, createComponent } from 'solid-js/web';
 import App from './App';
 import 'virtual:uno.css';
 import "dockview-core/dist/styles/dockview.css";
+import "github-markdown-css/github-markdown-light.css";
 import "./style/index.scss";
 import 'solid-devtools';
 

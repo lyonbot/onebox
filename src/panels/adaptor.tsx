@@ -1,5 +1,5 @@
 import { DockviewPanelApi, GroupPanelContentPartInitParameters, GroupPanelPartInitParameters, IContentRenderer, ITabRenderer } from "dockview-core";
-import { JSX, createEffect, createSignal, getOwner, lazy, runWithOwner } from "solid-js";
+import { JSX, createEffect, createMemo, createSignal, getOwner, lazy, runWithOwner } from "solid-js";
 import { Portal } from "solid-js/web";
 import { OneBox } from "~/store";
 import { UIPanel } from "~/store/panels";
@@ -21,10 +21,12 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
     init(parameters: GroupPanelContentPartInitParameters): void {
       this.element.style.display = 'contents'
       runWithOwner(owner, () => {
+        const id = parameters.api.id
+        const getPanelData = createMemo(() => oneBox.panels.state.panels.find(x => x.id === id))
+
         createEffect(() => {
           if (!this.$isActive[0]()) return null
-          const id = parameters.api.id
-          const panelData = oneBox.panels.state.panels.find(x => x.id === id) // assuming the ref never change
+          const panelData = getPanelData() // assuming the ref never change
           if (!panelData) return null
 
           const PanelComponent = lazy(panelSolidComponents[panelData.panelType || 'default'])
@@ -70,25 +72,32 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
       this.element.style.display = 'contents'
 
       runWithOwner(owner, () => {
+        const panelId = parameters.api.id
+        const getPanelData = createMemo(() => oneBox.panels.state.panels.find(x => x.id === panelId))
+
         createEffect(() => {
           if (!this.$isActive[0]()) return null
-          const panelId = parameters.api.id
-          const panelData = oneBox.panels.state.panels.find(x => x.id === panelId) // assuming the ref never change
-          if (!panelData) return null
 
           const closePanel = () => {
             oneBox.panels.api.closePanel(panelId)
           }
 
           const rename = async () => {
-            await oneBox.api.interactiveRenameFile(panelData.filename)
+            const panelData = getPanelData()
+            if (!panelData) return
+
+            await oneBox.api.interactiveRenameFile(panelData?.filename)
           };
 
-          const copyPanel = () => {
+          const copyPanel = (pos: 'right' | 'below') => {
+            const panelData = getPanelData()
+            if (!panelData) return
+
+            oneBox.panels.update('activePanelId', panelId) // fix "openPanel" position
             oneBox.panels.api.openPanel({
               panelType: panelData.panelType,
               filename: panelData.filename,
-            }, 'right')
+            }, pos)
           }
 
           return <Portal mount={this.element} ref={el => void (el.style.display = 'contents')}>
@@ -101,7 +110,11 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
                   return
                 }
                 if (modKey(ev) === modKey.Mod) {
-                  copyPanel()
+                  copyPanel('right')
+                  return
+                }
+                if (modKey(ev) === (modKey.Mod | modKey.Alt)) {
+                  copyPanel('below')
                   return
                 }
               }}
@@ -124,11 +137,11 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
 
                 <div class='ob-status-actionHint'>
                   <kbd>Cmd+<i class='i-ob-mouse-left' /></kbd>
-                  Split to Right
+                  Split Panel
                 </div>
               </>)}
             >
-              <div class="tab-content">{panelData.filename}</div>
+              <div class="tab-content">{getPanelData()?.filename}</div>
               <div class="action-container">
                 <ul class="tab-list">
                   <div class="tab-action" onClick={closePanel}>

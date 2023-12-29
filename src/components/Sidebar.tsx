@@ -8,7 +8,7 @@ const LC_WIDTH = 'oneBox:sidebarWidth';
 export function Sidebar(props: { id: string }) {
   const oneBox = useOneBox();
   const activeFile = createMemo(() => {
-    const filename = oneBox.panels.state.activePanel?.filename;
+    const filename = oneBox.api.getCurrentFilename()
     if (!filename) return null;
 
     return oneBox.files.api.getControllerOf(filename)

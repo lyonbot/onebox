@@ -3,6 +3,7 @@ import { batch, createEffect, mapArray, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { watch } from "~/utils/solid"
 import { uniqueId } from "lodash"
+import type * as monaco from 'monaco-editor'
 
 export type PanelsStore = ReturnType<typeof createPanelsStore>
 
@@ -23,6 +24,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
 
     isDraggingPanel: false,
     dockview: null as unknown as DockviewComponent,
+    activeMonacoEditor: undefined as undefined | monaco.editor.IStandaloneCodeEditor,
   })
 
   // avoid dockview's drag-n-drop polluting monaco
@@ -93,8 +95,12 @@ export function createPanelsStore(/*root: () => OneBox*/) {
           update('panels', index(), { panelApi: () => panel.api })
 
           onCleanup(() => {
-            const p = dockview.getGroupPanel(panel.id)
-            if (p) dockview.removePanel(p)
+            try {
+              const p = dockview.getGroupPanel(panel.id)
+              if (p) dockview.removePanel(p)
+            } catch {
+              // ignore errors; maybe the panel is already removed
+            }
           })
 
           return null

@@ -38,7 +38,9 @@ select:not(:disabled) {
       background: #000;
     }
 
-    .ob-binaryDisplay-preview {
+    .ob-darkMode-intact,
+    .markdown-body img,
+    .markdown-body video {
       filter: brightness(0.7) invert(1) hue-rotate(180deg);
     }
   }

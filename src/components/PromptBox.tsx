@@ -20,7 +20,7 @@ export function PromptBox(props: { req: PromptRequest, onResolve: (value: string
   })
 
   createEffect(() => {
-    const max = Math.max(enumOptions()?.length || 0 - 1, 0)
+    const max = Math.max((enumOptions()?.length || 0) - 1, 0)
     if (enumIndex() < 0) setEnumIndex(0)
     else if (enumIndex() > max) setEnumIndex(max)
   })
@@ -51,6 +51,19 @@ export function PromptBox(props: { req: PromptRequest, onResolve: (value: string
           onInput={ev => setValue(ev.currentTarget.value)}
           onKeyDown={ev => {
             const enums = enumOptions()
+            if (enums) {
+              // Arrow Up + Down
+              if (ev.key === 'ArrowUp') setEnumIndex(v => v > 0 ? v - 1 : enumOptions()!.length - 1);
+              else if (ev.key === 'ArrowDown') setEnumIndex(v => v < enumOptions()!.length - 1 ? v + 1 : 0);
+              else if (ev.key === 'Home') setEnumIndex(0);
+              else if (ev.key === 'End') setEnumIndex(enumOptions()!.length - 1);
+              else return
+
+              ev.preventDefault()
+            }
+          }}
+          onKeyUp={ev => {
+            const enums = enumOptions()
             if (ev.key === 'Enter') {
               if (enums) {
                 const item = enums[enumIndex()]
@@ -60,16 +73,6 @@ export function PromptBox(props: { req: PromptRequest, onResolve: (value: string
               }
             } else if (ev.key === 'Escape') {
               props.onResolve(null)
-            } else if (enums) {
-              // Arrow Up + Down
-              if (ev.key === 'ArrowUp') {
-                setEnumIndex(v => v > 0 ? v - 1 : enumOptions()!.length - 1);
-                ev.preventDefault()
-              }
-              else if (ev.key === 'ArrowDown') {
-                setEnumIndex(v => v < enumOptions()!.length - 1 ? v + 1 : 0);
-                ev.preventDefault()
-              }
             }
           }}
         />
