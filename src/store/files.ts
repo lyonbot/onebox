@@ -78,7 +78,10 @@ export function createFilesStore(root: () => OneBox) {
 
       return {
         get content() { return file.content },
-        setContent(value: string) { updateFile('content', value) },
+        setContent(value: string) {
+          this.model.pushEditOperations([], [{ range: this.model.getFullModelRange(), text: value }], null as any)
+          updateFile('content', value)
+        },
 
         get contentBinary() { return file.contentBinary },
         setContentBinary(value: Buffer | false) { updateFile('contentBinary', value) },

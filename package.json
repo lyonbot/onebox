@@ -31,6 +31,7 @@
     "dockview-core": "^1.8.5",
     "github-markdown-css": "^5.5.0",
     "incremental-dom": "^0.7.0",
+    "json5": "^2.2.3",
     "jszip": "^3.10.1",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",

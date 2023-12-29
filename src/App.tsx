@@ -48,12 +48,29 @@ export default function App() {
         const files = oneBox.files.state.files;
         if (files.length) {
           const names = files.map(f => f.filename)
-          oneBox.prompt(null, {
+          const createNewFilePlaceholder = '<create new file>:'
+          oneBox.prompt('Open File', {
             enumOptions(input) {
-              return getSearchMatcher(input()).filter(names).map(name => ({ label: name, value: name }))
+              const ans = getSearchMatcher(input()).filter(names)
+                .map(name => ({ label: name as any, value: name }))
+
+              if (input()) ans.unshift({
+                label: () => <div>
+                  <i class="i-mdi-plus-circle"></i>
+                  {` Create File "${input()}"`}
+                </div>,
+                value: createNewFilePlaceholder + input(),
+              })
+
+              return ans
             },
           }).then(filename => {
-            if (filename) oneBox.api.openFile(filename)
+            if (!filename) return
+            if (filename.startsWith(createNewFilePlaceholder)) {
+              oneBox.api.createEmptyFile(filename.slice(createNewFilePlaceholder.length))
+            } else {
+              oneBox.api.openFile(filename)
+            }
           })
         }
         return

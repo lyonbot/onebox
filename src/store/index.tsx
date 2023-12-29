@@ -41,9 +41,9 @@ function createOneBoxStore() {
     getCurrentFilename() {
       return panels.state.activePanel?.filename || ''
     },
-    createEmptyFile(filename?: string, forceNewPanel?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
+    createEmptyFile(filename?: string, openPosition?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
       const file = files.api.createFile({ filename })
-      panels.api.openPanel({ filename: file.filename }, forceNewPanel || 'within')
+      if (openPosition !== false) panels.api.openPanel({ filename: file.filename }, openPosition || 'within')
 
       return file
     },
@@ -126,68 +126,23 @@ function createOneBoxStore() {
       const file = files.api.getControllerOf(filename)
       if (!file) return
 
-      const actions: { label?: JSXElement | (() => JSXElement), value: string, run: Fn }[] = [];
+      const actions = await import('~/actions').then(m => m.getActions(getRoot(), filename));
 
       const guessTo = (file.lang === Lang.UNKNOWN) && guessLangFromContent(file.content)
       if (guessTo && guessTo !== Lang.UNKNOWN) {
         const desc = LangDescriptions[guessTo]
-        actions.push({
-          label: () => <div><i class="i-mdi-thought-bubble"></i> Set Language to <b>{desc.name}</b></div>,
-          value: 'set guessed language',
+        actions.unshift({
+          label: () => <div><i class="i-mdi-thought-bubble"></i> Switch to <b class='text-green-7'>{desc.name}</b> Language</div>,
+          value: 'switch to set guessed language',
           run() {
             file.setLang(guessTo)
           },
         })
       }
 
-      if (file.lang === Lang.MARKDOWN) {
-        actions.push({
-          label: () => <div><i class="i-mdi-markdown"></i> Preview Markdown</div>,
-          value: 'preview markdown',
-          run() {
-            panels.api.openPanel({ panelType: 'markdownPreview', filename: file.filename }, 'right')
-          },
-        })
-      }
-
-      actions.push({
-        label: () => <div><i class="i-mdi-scale-balance"></i> Diff</div>,
-        value: 'diff',
-        async run() {
-          const allList = oneBox.files.state.files.map(f => f.filename).filter(f => f !== file.filename)
-          const createNewFilePlaceholder = '<create new file>'
-          allList.unshift(createNewFilePlaceholder)
-
-          let otherFile = await ui.api.prompt(`Diff "${file.filename}" with`, {
-            enumOptions: (keyword) => getSearchMatcher(keyword()).filter(allList)
-              .map(x => ({
-                value: x,
-                label: x === createNewFilePlaceholder
-                  ? () => <div><i class="i-mdi-plus-circle" />{' Create New File'}</div>
-                  : x,
-              })),
-          })
-          if (!otherFile) return
-
-          if (otherFile === createNewFilePlaceholder) {
-            otherFile = files.api.createFile({
-              content: file.content,
-              filename: file.filename.replace(/\.[^.]+$/, p => `_diff${p}`),
-            }).filename
-          }
-
-          panels.api.openPanel({
-            panelType: 'diff',
-            title: 'Diff: ' + file.filename,
-            filename: file.filename,
-            diff: { filename2: otherFile },
-          }, 'within')
-        },
-      })
-
       ui.api.prompt("Action", {
         enumOptions(input) {
-          return actions
+          return getSearchMatcher(input()).filter(actions)
         },
       }).then(value => {
         const action = actions.find(a => a.value === value)

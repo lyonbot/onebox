@@ -57,7 +57,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
     <Show when={file.lang === Lang.UNKNOWN && guessedLang() !== Lang.UNKNOWN}>
       <div class='ob-status-actionHint'>
         <kbd>Cmd+K</kbd>
-        Set Language {LangDescriptions[guessedLang()]!.name}
+        Switch to <span class='text-green-2'>{LangDescriptions[guessedLang()]!.name}</span>
       </div>
     </Show>
   </>)))
