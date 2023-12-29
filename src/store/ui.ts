@@ -33,11 +33,11 @@ export function createUIStore() {
         update('actionHints', hints => hints.filter(h => h !== hint));
       }
     },
-    /** get a event handler for mouseenter */
-    getActionHintEvForMouse(hint: JSXElement) {
-      return (ev: MouseEvent) => {
+    /** get a event handler for mouseenter / focusout */
+    getActionHintEvFor(hint: JSXElement, anotherEv = 'mouseleave', strictTarget = true) {
+      return (ev: Event) => {
         const target = ev.currentTarget as HTMLElement
-        if (ev.target !== target) return;
+        if (strictTarget && ev.target !== target) return;
 
         const actualRemove = api.addActionHint(hint)
 
@@ -47,7 +47,9 @@ export function createUIStore() {
           clearInterval(timer)
         };
 
-        target.addEventListener('mouseleave', remove, { once: true });
+        ev.target!.addEventListener(anotherEv, () => {
+          remove()
+        }, { once: true });
       }
     },
     prompt(title: JSXElement | (() => JSXElement), opts?: Partial<PromptRequest>): Promise<string | null> {

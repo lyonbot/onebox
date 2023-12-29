@@ -97,7 +97,7 @@ export function Sidebar(props: { id: string }) {
             onDblClick={(ev) => {
               oneBox.api.openFile(file.filename, (ev.metaKey || ev.ctrlKey) ? 'right' : 'within')
             }}
-            onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(<>
+            onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
               <div class='ob-status-actionHint'>
                 <kbd><i class='i-ob-mouse-mid' /></kbd>
                 {isOpened() ? 'Close Editor' : <span class="text-red-2">Delete File</span>}

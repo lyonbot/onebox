@@ -4,7 +4,7 @@ import { nextTick, watch } from "~/utils/solid";
 export interface PromptRequest {
   title: JSXElement | (() => JSXElement)
   default?: string
-  enumOptions?: (input: Accessor<string>) => Array<{ value: string, title?: JSXElement | (() => JSXElement) }>
+  enumOptions?: (input: Accessor<string>) => Array<{ value: string, label?: JSXElement | (() => JSXElement) }>
   onMount?: (env: { inputBox: HTMLInputElement }) => void
 }
 
@@ -88,7 +88,7 @@ export function PromptBox(props: { req: PromptRequest, onResolve: (value: string
                   }}
                   onClick={() => props.onResolve(item.value)}
                 >
-                  {item.title as any || item.value}
+                  {item.label as any || item.value}
                 </div>
               ))}
             </For>

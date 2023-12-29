@@ -16,11 +16,14 @@ export interface AdaptedPanelProps {
 export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
   class DockviewContentAdaptor implements IContentRenderer {
     element = document.createElement('div');
+    private $isAlive = createSignal(true);
     private $isActive = createSignal(false);
 
     init(parameters: GroupPanelContentPartInitParameters): void {
       this.element.style.display = 'contents'
-      runWithOwner(owner, () => {
+      runWithOwner(owner, () => createEffect(() => {
+        if (!this.$isAlive[0]()) return
+
         const id = parameters.api.id
         const getPanelData = createMemo(() => oneBox.panels.state.panels.find(x => x.id === id))
 
@@ -40,7 +43,7 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
             />
           </Portal>
         })
-      })
+      }))
     }
 
     // onGroupChange?(group: DockviewGroupPanel): void {
@@ -58,6 +61,7 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
 
     dispose() {
       this.$isActive[1](false)
+      this.$isAlive[1](false)
     }
 
     // focus(): void {
@@ -66,17 +70,19 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
 
   class DockviewTabAdaptor implements ITabRenderer {
     element = document.createElement('div');
-    private $isActive = createSignal(true);
+    private $isAlive = createSignal(true);
 
     init(parameters: GroupPanelPartInitParameters): void {
       this.element.style.display = 'contents'
 
-      runWithOwner(owner, () => {
-        const panelId = parameters.api.id
-        const getPanelData = createMemo(() => oneBox.panels.state.panels.find(x => x.id === panelId))
-
+      runWithOwner(owner, () =>
         createEffect(() => {
-          if (!this.$isActive[0]()) return null
+          if (!this.$isAlive[0]()) return null
+
+          const panelId = parameters.api.id
+          const getPanelData = createMemo(() => oneBox.panels.state.panels.find(x => x.id === panelId))
+
+          const title = createMemo(() => getPanelData()?.title || getPanelData()?.filename || panelId)
 
           const closePanel = () => {
             oneBox.panels.api.closePanel(panelId)
@@ -119,7 +125,7 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
                 }
               }}
               onDblClick={rename}
-              onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(<>
+              onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
                 <div class='ob-status-actionHint'>
                   <kbd><i class='i-ob-mouse-mid' /></kbd>
                   Close
@@ -141,7 +147,7 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
                 </div>
               </>)}
             >
-              <div class="tab-content">{getPanelData()?.filename}</div>
+              <div class="tab-content">{title()}</div>
               <div class="action-container">
                 <ul class="tab-list">
                   <div class="tab-action" onClick={closePanel}>
@@ -152,14 +158,14 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
             </div>
           </Portal>
         })
-      })
+      )
     }
 
     update(): void {
     }
 
     dispose() {
-      this.$isActive[1](false)
+      this.$isAlive[1](false)
     }
   }
 

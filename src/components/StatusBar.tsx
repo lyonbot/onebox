@@ -6,7 +6,7 @@ export function StatusBar(props: { id: string }) {
   return <div id={props.id}>
     <button class="ob-status-button" title="Toggle Sidebar"
       onClick={() => oneBox.ui.api.toggleSidebar()}
-      onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(<>
+      onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
         <div class='ob-status-actionHint'>
           <kbd>Cmd+B</kbd>
           Toggle Sidebar

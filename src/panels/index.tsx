@@ -10,7 +10,7 @@ function Watermark() {
   return <div
     class="ob-watermark"
     onDblClick={e => (e.preventDefault(), oneBox.api.createEmptyFile())}
-    onMouseEnter={oneBox.ui.api.getActionHintEvForMouse([
+    onMouseEnter={oneBox.ui.api.getActionHintEvFor([
       <div class='ob-status-actionHint'>
         <kbd><i class='i-ob-mouse-left' />x2</kbd>
         New File
@@ -49,7 +49,7 @@ export function OneBoxDockview() {
             group.activePanel?.api.setActive()
             oneBox.api.createEmptyFile(undefined, (ev.metaKey || ev.ctrlKey || ev.shiftKey) ? 'right' : 'within')
           }}
-          onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(
+          onMouseEnter={oneBox.ui.api.getActionHintEvFor(
             <div class='ob-status-actionHint'>
               <kbd>Cmd+<i class='i-ob-mouse-left' /></kbd>
               Create and Open Aside

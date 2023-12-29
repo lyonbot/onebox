@@ -1,6 +1,6 @@
 import { DockviewComponent, DockviewPanelApi } from "dockview-core"
 import { batch, createEffect, mapArray, onCleanup } from "solid-js"
-import { createStore } from "solid-js/store"
+import { SetStoreFunction, createStore } from "solid-js/store"
 import { watch } from "~/utils/solid"
 import { uniqueId } from "lodash"
 import type * as monaco from 'monaco-editor'
@@ -12,8 +12,13 @@ const idPrefix = `panel-${Date.now().toString(36)}-`
 export interface UIPanel {
   id: string
   filename: string
+  title?: string
   panelType?: string
   panelApi?: () => DockviewPanelApi
+
+  diff?: {
+    filename2: string
+  }
 }
 
 export function createPanelsStore(/*root: () => OneBox*/) {
@@ -66,6 +71,9 @@ export function createPanelsStore(/*root: () => OneBox*/) {
     },
     closePanel(id: string) {
       update('panels', panels => panels.filter(x => x.id !== id))
+    },
+    updatePanel(id: string) {
+      return ((...args: any[]) => update('panels', p => p.id === id, ...args as [any])) as SetStoreFunction<UIPanel>
     },
 
     setupDockview(dockview: DockviewComponent) {
