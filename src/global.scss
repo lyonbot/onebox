@@ -10,6 +10,7 @@ button,
 input,
 select,
 textarea {
+  box-sizing: border-box;
   font-size: inherit;
   padding: .25em .5em;
 }
@@ -24,6 +25,7 @@ textarea {
   grid-template-rows: 1fr auto;
   grid-template-columns: auto 1fr;
   height: 100vh;
+  transition: filter .2s;
 
   &.darkMode {
     filter: contrast(0.9) saturate(0.7) invert(1) hue-rotate(180deg);
