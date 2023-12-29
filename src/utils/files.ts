@@ -28,7 +28,7 @@ export function downloadFile(filename: string, content: BlobPart) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = filename
+  a.download = basename(filename)
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -41,4 +41,8 @@ export function guessFileNameType(filename: string) {
   if (/^(mp3|wav|ogg|flac|aac)$/i.test(ext)) return 'audio'
 
   return 'unknown'
+}
+
+export function basename(filename: string) {
+  return filename.split('/').pop() || ''
 }

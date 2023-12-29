@@ -17,6 +17,9 @@ dependencies:
   github-markdown-css:
     specifier: ^5.5.0
     version: 5.5.0
+  incremental-dom:
+    specifier: ^0.7.0
+    version: 0.7.0
   jszip:
     specifier: ^3.10.1
     version: 3.10.1
@@ -2391,6 +2394,10 @@ packages:
     resolution: {integrity: sha1-khi5srkoojixPcT7a21XbyMUU+o=}
     engines: {node: '>=0.8.19'}
     dev: true
+
+  /incremental-dom@0.7.0:
+    resolution: {integrity: sha512-SBHQ6AiCmtwh7TU9hjq2CspasJe7ggGa9k+qYZft+d5Qq9v7V+07wlnRSZH5GGYjI8wn6U5p7dDua7f1bih52g==}
+    dev: false
 
   /inflight@1.0.6:
     resolution: {integrity: sha1-Sb1jMdfQLQwJvJEKEHW6gWW1bfk=}
