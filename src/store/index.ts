@@ -25,10 +25,10 @@ function createOneBoxStore() {
 
   const api = {
     createEmptyFile(filename?: string, forceNewPanel?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
-      const f = files.api.createFile(filename)
-      panels.api.openPanel({ filename: f.filename }, forceNewPanel || 'within')
+      const file = files.api.createFile({ filename })
+      panels.api.openPanel({ filename: file.filename }, forceNewPanel || 'within')
 
-      return f
+      return file
     },
     openFile(filename: string, forceNewPanel?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
       const existingPanel = !forceNewPanel && panels.state.panels.find(p => p.filename === filename)

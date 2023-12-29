@@ -34,7 +34,7 @@ select:not(:disabled) {
     filter: contrast(0.9) saturate(0.7) invert(1) hue-rotate(180deg);
 
     #ob-statusBar {
-      filter: brightness(0.7) invert(1);
+      filter: brightness(0.7) invert(1) hue-rotate(180deg);
       background: #000;
     }
   }
@@ -52,4 +52,15 @@ select:not(:disabled) {
 
 #ob-statusBar {
   grid-area: statusBar;
+}
+
+.ob-dropFileMask {
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  background: #fff9;
+  pointer-events: none;
 }

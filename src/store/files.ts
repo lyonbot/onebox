@@ -16,8 +16,6 @@ export interface VTextFile {
 }
 
 export interface VTextFileController {
-  file: VTextFile
-
   readonly filename: string
   readonly content: string
   readonly lang: Lang
@@ -62,8 +60,6 @@ export function createFilesStore(root: () => OneBox) {
       })
 
       return {
-        file,
-
         get content() { return file.content },
         setContent(value: string) { updateFile('content', value) },
 
@@ -113,17 +109,17 @@ export function createFilesStore(root: () => OneBox) {
     },
 
     nonConflictFilename,
-    createFile(content?: string, filename?: string) {
-      filename = nonConflictFilename('untitled.txt')
-
+    createFile(desc: Partial<VTextFile>) {
+      const filename = nonConflictFilename(desc.filename || 'untitled.txt')
       const f: VTextFile = {
-        filename,
-        content: content || '',
+        content: '',
         lang: Lang.UNKNOWN,
+        ...desc,
+        filename,
       }
       update('files', files => [...files, f])
-      return filesLUT()[f.filename]
-    }
+      return filesLUT()[filename]
+    },
   }
 
   return {
