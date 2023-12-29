@@ -22,7 +22,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
     get activePanel() { return state.panels.find(x => x.id === this.activePanelId) },
 
     isDraggingPanel: false,
-    dockview: null as unknown as DockviewComponent
+    dockview: null as unknown as DockviewComponent,
   })
 
   // avoid dockview's drag-n-drop polluting monaco
@@ -54,8 +54,8 @@ export function createPanelsStore(/*root: () => OneBox*/) {
             position: {
               referencePanel: state.activePanelId,
               referenceGroup: state.dockview.activeGroup?.id,
-              direction
-            }
+              direction,
+            },
           })
         }
       })
@@ -87,7 +87,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
             id: panelData.id,
             component: 'adaptor',
             tabComponent: 'adaptor',
-            params: panelData
+            params: panelData,
           })
 
           update('panels', index(), { panelApi: () => panel.api })
@@ -109,7 +109,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
         if (dockview.activePanel?.id === id) return
         dockview.getGroupPanel(id)?.api.setActive()
       })
-    }
+    },
   }
 
   return {

@@ -14,7 +14,7 @@ function Watermark() {
       <div class='ob-status-actionHint'>
         <kbd><i class='i-ob-mouse-left' />x2</kbd>
         New File
-      </div>
+      </div>,
     ])}
   >
     <div>

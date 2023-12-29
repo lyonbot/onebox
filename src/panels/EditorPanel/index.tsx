@@ -1,7 +1,7 @@
 import * as monaco from 'monaco-editor';
 import MonacoEditor from "../../components/MonacoEditor";
 import { useOneBox } from "../../store";
-import { Show, batch, createMemo, createSignal, onCleanup, } from "solid-js";
+import { Show, batch, createMemo, createSignal, onCleanup } from "solid-js";
 import { nextTick, watch } from "~/utils/solid";
 import { Lang, LangDescriptions } from "~/utils/lang";
 import { guessLangFromContent } from "~/utils/langUtils";
@@ -105,56 +105,56 @@ export default function EditorPanel(props: AdaptedPanelProps) {
               id: 'oneBox.toggleSidebar',
               label: 'Toggle Sidebar',
               run: () => oneBox.ui.api.toggleSidebar(),
-              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB]
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB],
             })
 
             editor.addAction({
               id: 'oneBox.renameFile',
               label: 'Rename File',
               run: rename,
-              keybindings: [monaco.KeyCode.F2]
+              keybindings: [monaco.KeyCode.F2],
             })
 
             editor.addAction({
               id: 'oneBox.createFile',
               label: 'New File',
               run: () => void oneBox.api.createEmptyFile(),
-              keybindings: []
+              keybindings: [],
             })
 
             editor.addAction({
               id: 'oneBox.close',
               label: 'Close Panel',
               run: () => void removePanel(),
-              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyW, monaco.KeyMod.CtrlCmd | monaco.KeyCode.F4]
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyW, monaco.KeyMod.CtrlCmd | monaco.KeyCode.F4],
             })
 
             editor.addAction({
               id: 'oneBox.applyLangGuess',
               label: 'Language Guess: Apply',
               run: () => void applyLangGuess(),
-              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK]
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
             })
 
             editor.addAction({
               id: 'oneBox.downloadCurrentFile',
               label: 'OneBox: Download Current File',
               run: () => void oneBox.api.downloadCurrentFile(),
-              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS]
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
             })
 
             editor.addAction({
               id: 'oneBox.downloadCurrentProject',
               label: 'OneBox: Download Project (All Files)',
               run: () => void oneBox.api.downloadCurrentProject(),
-              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS]
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS],
             })
 
             editor.addAction({
               id: 'oneBox.run',
               label: 'OneBox: Run',
               run: () => { alert('bo') },
-              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter]
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
             })
           }
 
@@ -168,7 +168,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
               editor?.updateOptions({
                 dropIntoEditor: {
                   enabled: !isDraggingPanel,
-                }
+                },
               })
             })
           }

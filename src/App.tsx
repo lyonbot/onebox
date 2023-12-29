@@ -83,7 +83,7 @@ export default function App() {
                     filename: name,
                     content: isTextFile ? await file.text() : '',
                     contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),
-                    lang: guessLangFromName(name)
+                    lang: guessLangFromName(name),
                   }))
                 }
               }

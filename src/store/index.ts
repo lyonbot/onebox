@@ -65,11 +65,11 @@ function createOneBoxStore() {
         title: title(),
         files: files.state.files.map(f => ({
           ...f,
-          contentBinary: f.contentBinary && Buffer.from(f.contentBinary).toString('base64')
+          contentBinary: f.contentBinary && Buffer.from(f.contentBinary).toString('base64'),
         })),
         dockview: cloneDeepWith(panels.state.dockview?.toJSON(), (value) => {
           if (typeof value === 'function') return null
-        })
+        }),
       }
       return data
     },
@@ -113,7 +113,7 @@ function createOneBoxStore() {
         default: filename,
         onMount(ev) {
           if (ev.inputBox.selectionEnd) ev.inputBox.selectionEnd -= extname(filename).length
-        }
+        },
       })
       if (!newName) return
 

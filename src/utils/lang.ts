@@ -43,7 +43,7 @@ export const LangDescriptions: Record<Lang, LangDescription> = {
       '.ico', '.png', '.jpg', '.gif', '.mp4', '.ogg', '.m4a', '.mp3',
       '.ttf', '.woff', '.woff2', '.eot',
       '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-      '.zip', '.rar', '.tar', '.tgz', '.gz', '.7z'
-    ]
+      '.zip', '.rar', '.tar', '.tgz', '.gz', '.7z',
+    ],
   },
 }

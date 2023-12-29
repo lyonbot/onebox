@@ -7,6 +7,7 @@
   "type": "module",
   "devDependencies": {
     "@rollup/plugin-inject": "^5.0.5",
+    "@stylistic/eslint-plugin": "^1.5.1",
     "@types/lodash": "^4.14.202",
     "@types/node": "^18.19.3",
     "@typescript-eslint/eslint-plugin": "^6.16.0",

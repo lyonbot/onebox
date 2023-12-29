@@ -1,4 +1,4 @@
-import { DockviewPanelApi, GroupPanelContentPartInitParameters, GroupPanelPartInitParameters, IContentRenderer, ITabRenderer, } from "dockview-core";
+import { DockviewPanelApi, GroupPanelContentPartInitParameters, GroupPanelPartInitParameters, IContentRenderer, ITabRenderer } from "dockview-core";
 import { JSX, createEffect, createSignal, getOwner, lazy, runWithOwner } from "solid-js";
 import { Portal } from "solid-js/web";
 import { OneBox } from "~/store";
@@ -175,7 +175,7 @@ export function simpleRendererAdaptor(render: () => JSX.Element, owner = getOwne
     },
     dispose() {
       setActive(false)
-    }
+    },
   }
 }
 
