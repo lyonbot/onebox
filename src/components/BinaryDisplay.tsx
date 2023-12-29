@@ -22,7 +22,7 @@ export function BinaryDisplay(props: BinaryDisplayProps) {
     return url
   })
 
-  return <div class='flex flex-col items-center'>
+  return <div class='flex flex-col items-center overflow-auto'>
     <div class='text-xl'>{props.filename}</div>
     <div class='text-sm'>{props.buffer.length} bytes</div>
     <div class='mb-8'>
@@ -34,15 +34,15 @@ export function BinaryDisplay(props: BinaryDisplayProps) {
 
     <Switch>
       <Match when={guessedType() === 'image'}>
-        <img src={objectUrl()} class="max-w-full" />
+        <img src={objectUrl()} class="ob-binaryDisplay-preview max-w-full" />
       </Match>
 
       <Match when={guessedType() === 'audio'}>
-        <audio controls src={objectUrl()} />
+        <audio controls src={objectUrl()} class='ob-binaryDisplay-preview w-80%' />
       </Match>
 
       <Match when={guessedType() === 'video'}>
-        <video controls src={objectUrl()} class="max-w-full" />
+        <video controls src={objectUrl()} class="ob-binaryDisplay-preview max-w-full" />
       </Match>
     </Switch>
   </div>

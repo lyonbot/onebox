@@ -1,3 +1,4 @@
+import localForage from "localforage";
 import { debounce } from "lodash";
 import { createEffect, on, createMemo, mapArray, createSignal } from "solid-js";
 
@@ -15,12 +16,12 @@ export function watch<T>(
 
 export function useLocalStorage<T = string>(
   key: string,
-  parse: (s: string | null) => T = x => x as any,
-  stringify: (t: T) => string = x => String(x)
+  defaultValue: T
 ) {
-  const s = localStorage.getItem(key)
-  const [value, setValue] = createSignal<T>(parse(s))
-  const update = debounce(() => localStorage.setItem(key, stringify(value())), 1000)
+  const [value, setValue] = createSignal(defaultValue)
+  localForage.getItem<T>(key).then(v => v !== null && setValue(() => v))
+
+  const update = debounce(() => localForage.setItem(key, value()), 1000)
 
   createEffect(on(value, update))
   return [value, setValue] as const

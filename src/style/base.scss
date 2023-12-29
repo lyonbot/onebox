@@ -37,6 +37,10 @@ select:not(:disabled) {
       filter: brightness(0.7) invert(1) hue-rotate(180deg);
       background: #000;
     }
+
+    .ob-binaryDisplay-preview {
+      filter: brightness(0.7) invert(1) hue-rotate(180deg);
+    }
   }
 }
 

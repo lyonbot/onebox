@@ -1,10 +1,11 @@
 import JSZip from 'jszip'
+import localForage from 'localforage'
 import { batch, createRoot, createSignal, getOwner } from 'solid-js'
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
 import { watch } from '~/utils/solid'
-import { cloneDeep } from 'lodash'
+import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
 import { downloadFile } from '~/utils/files'
 import { Lang } from '~/utils/lang'
 import { Buffer } from "buffer";
@@ -64,7 +65,9 @@ function createOneBoxStore() {
           ...f,
           contentBinary: f.contentBinary && Buffer.from(f.contentBinary).toString('base64')
         })),
-        dockview: panels.state.dockview?.toJSON()
+        dockview: cloneDeepWith(panels.state.dockview?.toJSON(), (value, key) => {
+          if (typeof value === 'function') return null
+        })
       }
       return data
     },
@@ -85,15 +88,13 @@ function createOneBoxStore() {
       }))
       if (data.dockview) panels.state.dockview.fromJSON(cloneDeep(data.dockview))
     },
-    saveLastProject() {
+    saveLastProject: debounce(async () => {
       const data = api.exportProject()
-      localStorage.setItem(LS_LAST_PROJECT_DATA, JSON.stringify(data))
-    },
-    loadLastProject() {
-      const data = localStorage.getItem(LS_LAST_PROJECT_DATA)
-      if (!data) return false
-
-      const projectData = JSON.parse(data) as ExportedProjectData
+      await localForage.setItem(LS_LAST_PROJECT_DATA, data)
+    }, 500, { leading: true, trailing: true }),
+    async loadLastProject() {
+      const projectData = await localForage.getItem<ExportedProjectData>(LS_LAST_PROJECT_DATA)
+      if (!projectData) return false
       if (!projectData.files?.length) return false
       api.importProject(projectData)
       return true

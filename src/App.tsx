@@ -117,7 +117,6 @@ function EditZone() {
   watch(() => oneBox.panels.state.dockview, dockview => {
     if (!dockview) return
 
-    // load from localStorage
     if (!oneBox.api.loadLastProject()) {
       console.log('create empty file')
       oneBox.api.createEmptyFile()

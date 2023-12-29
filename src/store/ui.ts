@@ -1,3 +1,4 @@
+import localForage from 'localforage';
 import { JSXElement } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { watch } from '~/utils/solid';
@@ -5,17 +6,16 @@ import { watch } from '~/utils/solid';
 const LS_DARK_MODE = 'oneBox:darkMode';
 
 export function createUIStore() {
-  const tmp = localStorage.getItem(LS_DARK_MODE);
-
   const [state, update] = createStore({
     showSidebar: true,
-    darkMode: tmp ? tmp === '1' : window.matchMedia('(prefers-color-scheme: dark)').matches,
+    darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
     actionHints: [] as JSXElement[]
   });
 
-  watch(() => state.darkMode, value => {
-    localStorage.setItem(LS_DARK_MODE, value ? '1' : '0');
-  }, true)
+  localForage.getItem<boolean>(LS_DARK_MODE).then(val => {
+    if (val !== null) update('darkMode', val);
+    watch(() => state.darkMode, value => localForage.setItem(LS_DARK_MODE, value))
+  })
 
   const api = {
     toggleSidebar() {

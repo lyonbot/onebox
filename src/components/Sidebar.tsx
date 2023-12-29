@@ -14,7 +14,7 @@ export function Sidebar(props: { id: string }) {
     return oneBox.files.api.getControllerOf(filename)
   });
 
-  const [width, setWidth] = useLocalStorage(LC_WIDTH, x => +x! || 300);
+  const [width, setWidth] = useLocalStorage(LC_WIDTH, 300);
 
   const [isResizing, setIsResizing] = createSignal(false)
   const [hasFocus, setHasFocus] = createSignal(false)
