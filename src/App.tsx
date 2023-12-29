@@ -9,9 +9,10 @@ import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
 import { clsx, modKey } from "yon-utils";
 import './monaco/setup'
-import { scanFiles } from "./utils/fs";
+import { scanFiles } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
 import { VTextFileController } from "./store/files";
+import { Buffer } from "buffer";
 
 const global = window as any
 global.monaco = monaco
@@ -26,6 +27,19 @@ export default function App() {
       if (modKey(ev) === modKey.Mod && ev.code == 'KeyB') {
         ev.preventDefault()
         oneBox.ui.api.toggleSidebar()
+        return
+      }
+
+      if (modKey(ev) === modKey.Mod && ev.code == 'KeyS') {
+        ev.preventDefault()
+        oneBox.api.downloadCurrentFile()
+        return
+      }
+
+      if (modKey(ev) === (modKey.Mod | modKey.Shift) && ev.code == 'KeyS') {
+        ev.preventDefault()
+        oneBox.api.downloadCurrentProject()
+        return
       }
     });
   });
@@ -63,9 +77,11 @@ export default function App() {
               const handle = rawItem.webkitGetAsEntry?.()
               if (handle) {
                 for await (const [name, file] of scanFiles(handle)) {
+                  const isTextFile = file.type.startsWith('text/') || file.type.includes('/json')
                   imported.push(oneBox.files.api.createFile({
                     filename: name,
-                    content: await file.text(),
+                    content: isTextFile ? await file.text() : '',
+                    contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),
                     lang: guessLangFromName(name)
                   }))
                 }

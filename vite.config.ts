@@ -14,7 +14,7 @@ export default defineConfig({
     }),
     solidPlugin({}),
     UnoCSS(),
-    MonacoPlugin({})
+    MonacoPlugin({}),
   ],
   resolve: {
     alias: {

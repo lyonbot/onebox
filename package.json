@@ -6,6 +6,7 @@
   },
   "type": "module",
   "devDependencies": {
+    "@rollup/plugin-inject": "^5.0.5",
     "@types/lodash": "^4.14.202",
     "@types/node": "^18.19.3",
     "@typescript-eslint/eslint-plugin": "^6.16.0",
@@ -24,7 +25,9 @@
   },
   "dependencies": {
     "@iconify-json/mdi": "^1.1.63",
+    "buffer": "^6.0.3",
     "dockview-core": "^1.8.5",
+    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "monaco-editor": "^0.45.0",
     "solid-js": "^1.8.7",

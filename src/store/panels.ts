@@ -49,6 +49,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
           state.dockview.addPanel({
             id,
             component: 'adaptor',
+            tabComponent: 'adaptor',
             params: state.panels.at(-1)!,
             position: {
               referencePanel: state.activePanelId,
@@ -85,6 +86,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
           const panel = dockview.getGroupPanel(panelData.id) || dockview.addPanel({
             id: panelData.id,
             component: 'adaptor',
+            tabComponent: 'adaptor',
             params: panelData
           })
 

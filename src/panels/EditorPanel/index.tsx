@@ -1,19 +1,20 @@
 import * as monaco from 'monaco-editor';
-import MonacoEditor from "../components/MonacoEditor";
-import { useOneBox } from "../store";
-import { Show, batch, createEffect, createMemo, createSignal, onCleanup, } from "solid-js";
+import MonacoEditor from "../../components/MonacoEditor";
+import { useOneBox } from "../../store";
+import { Show, batch, createMemo, createSignal, onCleanup, } from "solid-js";
 import { watch } from "~/utils/solid";
 import { Lang, LangDescriptions } from "~/utils/lang";
 import { guessLangFromContent } from "~/utils/langUtils";
 import { entries, map } from "lodash";
-import { AdaptedPanelProps } from './adaptor';
+import { AdaptedPanelProps } from '../adaptor';
+import { BinaryDisplay } from '~/components/BinaryDisplay';
 
 export default function EditorPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
   const file = oneBox.files.api.getControllerOf(props.params.filename)!; // assuming not change
   const panelId = props.id
 
-  let editor!: monaco.editor.IStandaloneCodeEditor
+  let editor: monaco.editor.IStandaloneCodeEditor | undefined
   const isActive = createMemo(() => props.id === oneBox.panels.state.activePanelId)
   const [hasFocus, setHasFocus] = createSignal(false)
 
@@ -25,41 +26,6 @@ export default function EditorPanel(props: AdaptedPanelProps) {
   const removePanel = () => {
     oneBox.panels.api.closePanel(panelId)
   }
-
-  // #region Tabs
-  setTimeout(() => {
-    const tabEl = (props.api as any).panel.view.tab.element as HTMLElement;
-    if (tabEl.dataset.obCrafted) return
-    tabEl.dataset.obCrafted = "true"
-
-    const handleMouseDown = (ev: MouseEvent) => {
-      if (ev.button === 1) {
-        ev.preventDefault()
-        removePanel()
-      }
-    }
-
-    tabEl.addEventListener('mousedown', handleMouseDown)
-    tabEl.addEventListener('dblclick', rename)
-    tabEl.addEventListener('mouseenter', oneBox.ui.api.getActionHintEvForMouse([
-      <div class='ob-status-actionHint'>
-        <kbd><i class='i-ob-mouse-mid' /></kbd>
-        Close
-      </div>,
-
-      <div class='ob-status-actionHint'>
-        <kbd><i class='i-ob-mouse-left' />x2</kbd>
-        Rename
-      </div>,
-
-      <div class='ob-status-actionHint'>
-        <kbd>Shift+<i class='i-ob-mouse-left' /></kbd>
-        Float
-      </div>,
-    ]))
-  })
-  createEffect(() => props.api.setTitle(file.filename))
-  // #endregion
 
   // #region Lang
   const guessedLang = createMemo(() => {
@@ -75,10 +41,10 @@ export default function EditorPanel(props: AdaptedPanelProps) {
     const description = LangDescriptions[lang];
     const ext = description.extname || '.txt';
 
-    const cursor = editor.getSelections()?.map(x => x.toJSON())
+    const cursor = editor?.getSelections()?.map(x => x.toJSON())
     const scrollPos: monaco.editor.INewScrollPosition = {
-      scrollLeft: editor.getScrollLeft(),
-      scrollTop: editor.getScrollTop(),
+      scrollLeft: editor?.getScrollLeft(),
+      scrollTop: editor?.getScrollTop(),
     }
 
     batch(() => {
@@ -87,9 +53,11 @@ export default function EditorPanel(props: AdaptedPanelProps) {
     })
 
     setTimeout(() => {
-      editor.focus()
-      editor.setSelections(cursor as any)
-      editor.setScrollPosition(scrollPos, monaco.editor.ScrollType.Immediate)
+      if (editor) {
+        editor.focus()
+        editor.setSelections(cursor as any)
+        editor.setScrollPosition(scrollPos, monaco.editor.ScrollType.Immediate)
+      }
     }, 100)
   }
 
@@ -124,7 +92,8 @@ export default function EditorPanel(props: AdaptedPanelProps) {
         </Show>
       </div>
 
-      <MonacoEditor
+      {file.contentBinary && <BinaryDisplay filename={file.filename} buffer={file.contentBinary} />}
+      {!file.contentBinary && <MonacoEditor
         class="flex-1 border border-gray-300"
         model={file.model}
         options={{
@@ -178,6 +147,20 @@ export default function EditorPanel(props: AdaptedPanelProps) {
             })
 
             editor.addAction({
+              id: 'oneBox.downloadCurrentFile',
+              label: 'OneBox: Download Current File',
+              run: () => void oneBox.api.downloadCurrentFile(),
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS]
+            })
+
+            editor.addAction({
+              id: 'oneBox.downloadCurrentProject',
+              label: 'OneBox: Download Project (All Files)',
+              run: () => void oneBox.api.downloadCurrentProject(),
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS]
+            })
+
+            editor.addAction({
               id: 'oneBox.run',
               label: 'OneBox: Run',
               run: () => { alert('bo') },
@@ -188,11 +171,11 @@ export default function EditorPanel(props: AdaptedPanelProps) {
           // dockview interaction fix
           {
             watch(isActive, isActive => {
-              if (isActive) setTimeout(() => editor.focus())
+              if (isActive) setTimeout(() => editor?.focus())
             })
 
             watch(() => oneBox.panels.state.isDraggingPanel, isDraggingPanel => {
-              editor.updateOptions({
+              editor?.updateOptions({
                 dropIntoEditor: {
                   enabled: !isDraggingPanel,
                 }
@@ -200,7 +183,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
             })
           }
         }}
-      />
+      />}
     </div>
   )
 }

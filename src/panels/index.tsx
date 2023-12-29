@@ -1,6 +1,6 @@
 import { DockviewComponent, IWatermarkRenderer } from "dockview-core"
 import { useOneBox } from "~/store"
-import { getDockviewContentAdaptor, castConstructor, simpleRendererAdaptor } from "./adaptor"
+import { getDockviewAdaptor, castConstructor, simpleRendererAdaptor } from "./adaptor"
 import { getOwner } from "solid-js"
 import { noop } from "lodash"
 
@@ -32,10 +32,14 @@ export function OneBoxDockview() {
   const owner = getOwner()
 
   function setupWithDiv(parentElement: HTMLDivElement) {
+    const adaptors = getDockviewAdaptor(oneBox, owner)
     const dockview = new DockviewComponent({
       parentElement,
       components: {
-        adaptor: getDockviewContentAdaptor(oneBox, owner),
+        adaptor: adaptors.DockviewContentAdaptor,
+      },
+      tabComponents: {
+        adaptor: adaptors.DockviewTabAdaptor,
       },
       createLeftHeaderActionsElement: () => simpleRendererAdaptor(() => (
         <button

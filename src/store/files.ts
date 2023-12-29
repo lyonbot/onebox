@@ -6,24 +6,30 @@ import { fromPairs } from "lodash"
 import { watch } from '~/utils/solid'
 import { OneBox } from '.'
 import { extname, guessLangFromName } from '~/utils/langUtils'
+import { Buffer } from "buffer";
 
 export type FilesStore = ReturnType<typeof createFilesStore>
 
 export interface VTextFile {
   filename: string
   content: string
+  /** if presents, the `content` will be meaningless */
+  contentBinary?: Buffer | false
   lang: Lang
 }
 
 export interface VTextFileController {
   readonly filename: string
   readonly content: string
+  readonly contentBinary?: Buffer | false
   readonly lang: Lang
   readonly model: monaco.editor.ITextModel
 
   setFilename(filename: string): string
   setContent(content: string): void
   setLang(lang: Lang): void
+  setContentBinary(content: Buffer | false): void
+  notifyBinaryContentChanged(): void
 
   delete(): void
 }
@@ -63,6 +69,10 @@ export function createFilesStore(root: () => OneBox) {
         get content() { return file.content },
         setContent(value: string) { updateFile('content', value) },
 
+        get contentBinary() { return file.contentBinary },
+        setContentBinary(value: Buffer | false) { updateFile('contentBinary', value) },
+        notifyBinaryContentChanged() { updateFile('contentBinary', (b) => (b as Buffer).subarray()) }, // make a different wrapper to same memory
+
         get lang() { return file.lang },
         setLang(value: Lang) { updateFile('lang', value) },
 
@@ -79,6 +89,9 @@ export function createFilesStore(root: () => OneBox) {
             if (extname(oldName) !== extname(newName)) {
               updateFile('lang', guessLangFromName(newName, file.lang))
             }
+
+            // resort files
+            update('files', sortFilesByName)
           })
 
           return this.filename
@@ -92,6 +105,7 @@ export function createFilesStore(root: () => OneBox) {
       }
     }
   )
+
 
   const filesLUT = createMemo(() => fromPairs(fileControllers().map(f => [f.filename, f])))
 
@@ -117,7 +131,7 @@ export function createFilesStore(root: () => OneBox) {
         ...desc,
         filename,
       }
-      update('files', files => [...files, f])
+      update('files', files => sortFilesByName([...files, f]))
       return filesLUT()[filename]
     },
   }
@@ -128,4 +142,20 @@ export function createFilesStore(root: () => OneBox) {
     controllers: filesLUT,
     api,
   }
+}
+
+function sortFilesByName(array: VTextFile[]) {
+  let needResort = false
+  const oldFilenameList = array.map(x => x.filename)
+  const newFilenameMapping = oldFilenameList
+    .map((x, i) => x.replace(/[^/]+$/, `!!${i.toString().padStart(10, '0')}`))
+    .sort()
+    .map((x, i) => {
+      const newIndex = parseInt(x.slice(-10), 10)
+      if (newIndex !== i) needResort = true
+      return newIndex
+    })
+
+  if (!needResort) return array
+  return newFilenameMapping.map(i => array[i])
 }

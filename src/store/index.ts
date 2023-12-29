@@ -1,15 +1,25 @@
-import { batch, createRoot, getOwner } from 'solid-js'
+import JSZip from 'jszip'
+import { batch, createRoot, createSignal, getOwner } from 'solid-js'
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
 import { watch } from '~/utils/solid'
 import { cloneDeep } from 'lodash'
+import { downloadFile } from '~/utils/files'
+import { Lang } from '~/utils/lang'
+import { Buffer } from "buffer";
 
 export type OneBox = ReturnType<typeof createOneBoxStore>
 
 export interface ExportedProjectData {
   is: 'oneBox:projectData'
-  files: VTextFile[]
+  title: string
+  files: {
+    filename: string
+    content: string
+    contentBinary?: string | false // base64
+    lang: string
+  }[]
   dockview?: any // layout json
 }
 
@@ -19,6 +29,7 @@ function createOneBoxStore() {
   const getRoot: () => OneBox = () => root
   const owner = getOwner()
 
+  const [title, setTitle] = createSignal('OneBox Project')
   const files = createFilesStore(getRoot)
   const panels = createPanelsStore(/* getRoot */)
   const ui = createUIStore()
@@ -43,11 +54,16 @@ function createOneBoxStore() {
       panels.state.dockview.clear()
       panels.update({ panels: [], activePanelId: '' })
       files.update({ files: [] })
+      setTitle('OneBox Project')
     },
     exportProject() {
       const data: ExportedProjectData = {
         is: 'oneBox:projectData',
-        files: files.state.files.map(f => cloneDeep(f)),
+        title: title(),
+        files: files.state.files.map(f => ({
+          ...f,
+          contentBinary: f.contentBinary && Buffer.from(f.contentBinary).toString('base64')
+        })),
         dockview: panels.state.dockview?.toJSON()
       }
       return data
@@ -59,7 +75,14 @@ function createOneBoxStore() {
       api.resetProject()
 
       // then import files and open panels
-      files.update('files', cloneDeep(data.files))
+      setTitle(data.title || 'OneBox Project')
+      files.update('files', data.files.map((raw): VTextFile => {
+        return {
+          ...raw,
+          lang: raw.lang as Lang || Lang.UNKNOWN,
+          contentBinary: !!raw.contentBinary && Buffer.from(raw.contentBinary, 'base64'),
+        }
+      }))
       if (data.dockview) panels.state.dockview.fromJSON(cloneDeep(data.dockview))
     },
     saveLastProject() {
@@ -75,6 +98,29 @@ function createOneBoxStore() {
       api.importProject(projectData)
       return true
     },
+
+    downloadCurrentFile() {
+      const file = files.state.files.find(f => f.filename === panels.state.activePanel?.filename)
+      if (!file) return
+
+      downloadFile(file.filename, file.contentBinary || file.content)
+    },
+
+    downloadCurrentProject() {
+      const name = prompt('Enter file name (without .zip)', title())
+      if (!name) return
+
+      const zip = new JSZip()
+      zip.file('onebox.project.json', JSON.stringify({ ...api.exportProject(), files: undefined }))
+
+      for (const file of files.state.files) {
+        zip.file(file.filename, file.contentBinary || file.content)
+      }
+
+      zip.generateAsync({ type: 'blob' }).then(content => {
+        downloadFile(name + '.zip', content)
+      })
+    },
   }
 
   // close file panels when file is deleted
@@ -88,6 +134,7 @@ function createOneBoxStore() {
     })
 
   const root = {
+    get title() { return title() },
     files,
     panels,
     owner,

@@ -22,3 +22,23 @@ export async function* scanFiles(e: FileSystemEntry): AsyncGenerator<YieldItem> 
 
   yield* traverse(e, '')
 }
+
+export function downloadFile(filename: string, content: BlobPart) {
+  const blob = new Blob([content], { type: 'application/octet-stream' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export function guessFileNameType(filename: string) {
+  const ext = filename.split('.').pop() || ''
+
+  if (/^(png|jpe?g|gif|webp|bmp|ico|svg|tiff?)$/i.test(ext)) return 'image'
+  if (/^(mp4|webm|ogg|mov|avi|flv|wmv|mpg)$/i.test(ext)) return 'video'
+  if (/^(mp3|wav|ogg|flac|aac)$/i.test(ext)) return 'audio'
+
+  return 'unknown'
+}
