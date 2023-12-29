@@ -1,0 +1,55 @@
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+button,
+input,
+select,
+textarea {
+  box-sizing: border-box;
+  font-size: inherit;
+  padding: .25em .5em;
+}
+
+button:not(:disabled),
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+#ob-app {
+  display: grid;
+  grid-template:
+    'sidebar   editZone'
+    'statusBar statusBar';
+  grid-template-rows: 1fr auto;
+  grid-template-columns: auto 1fr;
+  height: 100vh;
+  transition: filter .2s;
+
+  &.darkMode {
+    filter: contrast(0.9) saturate(0.7) invert(1) hue-rotate(180deg);
+
+    #ob-statusBar {
+      filter: brightness(0.7) invert(1);
+      background: #000;
+    }
+  }
+}
+
+#ob-sidebar {
+  grid-area: sidebar;
+}
+
+#ob-editZone {
+  grid-area: editZone;
+  position: relative;
+  min-width: 0;
+}
+
+#ob-statusBar {
+  grid-area: statusBar;
+}

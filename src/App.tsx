@@ -7,7 +7,7 @@ import _ from 'lodash'
 import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
-import { clsx } from "yon-utils";
+import { clsx, modKey } from "yon-utils";
 import './monaco/setup'
 
 const global = window as any
@@ -20,7 +20,7 @@ export default function App() {
 
   onMount(() => {
     window.addEventListener('keydown', ev => {
-      if ((ev.metaKey || ev.ctrlKey) && !ev.shiftKey && ev.key == 'b') {
+      if (modKey(ev) === modKey.Mod && ev.code == 'KeyB') {
         ev.preventDefault()
         oneBox.ui.api.toggleSidebar()
       }

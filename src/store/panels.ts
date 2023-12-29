@@ -6,6 +6,8 @@ import { uniqueId } from "lodash"
 
 export type PanelsStore = ReturnType<typeof createPanelsStore>
 
+const idPrefix = `panel-${Date.now().toString(36)}-`
+
 export interface UIPanel {
   id: string
   filename: string
@@ -39,7 +41,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
 
   const api = {
     openPanel(panel: Omit<UIPanel, 'id'> & { id?: string }, direction?: 'within' | 'left' | 'right' | 'above' | 'below') {
-      const id = panel.id || uniqueId('panel-')
+      const id = panel.id || uniqueId(idPrefix)
 
       batch(() => {
         update('panels', x => [...x, { id, ...panel }])

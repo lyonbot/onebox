@@ -1,10 +1,11 @@
 import * as monaco from 'monaco-editor'
 import { batch, createMemo, mapArray, onCleanup, untrack } from "solid-js"
 import { SetStoreFunction, createStore } from "solid-js/store"
-import { Lang, LangDescriptions } from "~/utils/langsBase"
+import { Lang, LangDescriptions } from "~/utils/lang"
 import { fromPairs } from "lodash"
 import { watch } from '~/utils/solid'
 import { OneBox } from '.'
+import { extname, guessLangFromName } from '~/utils/langUtils'
 
 export type FilesStore = ReturnType<typeof createFilesStore>
 
@@ -75,9 +76,13 @@ export function createFilesStore(root: () => OneBox) {
           if (!value || value === file.filename) return file.filename
 
           batch(() => {
+            const oldName = file.filename
             const newName = nonConflictFilename(value)
             root().panels.update('panels', p => p.filename === this.filename, 'filename', newName)
             updateFile('filename', newName)
+            if (extname(oldName) !== extname(newName)) {
+              updateFile('lang', guessLangFromName(newName, file.lang))
+            }
           })
 
           return this.filename

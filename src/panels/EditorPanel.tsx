@@ -3,7 +3,8 @@ import MonacoEditor from "../components/MonacoEditor";
 import { useOneBox } from "../store";
 import { Show, batch, createEffect, createMemo, createSignal, onCleanup, } from "solid-js";
 import { watch } from "~/utils/solid";
-import { Lang, LangDescriptions, guessLang } from "~/utils/langsBase";
+import { Lang, LangDescriptions } from "~/utils/lang";
+import { guessLangFromContent } from "~/utils/langUtils";
 import { entries, map } from "lodash";
 import { AdaptedPanelProps } from './adaptor';
 
@@ -63,7 +64,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
   // #region Lang
   const guessedLang = createMemo(() => {
     if (file.lang !== Lang.UNKNOWN) return file.lang;
-    return guessLang(file.content)
+    return guessLangFromContent(file.content)
   })
 
   const applyLangGuess = () => {
@@ -81,7 +82,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
     }
 
     batch(() => {
-      file.setFilename(file.filename.replace(/\.[^.]+$/, ext));
+      file.setFilename(file.filename.replace(/(\.\w+)?$/, ext));
       file.setLang(lang);
     })
 
