@@ -2,7 +2,7 @@ import * as monaco from 'monaco-editor';
 import MonacoEditor from "../../components/MonacoEditor";
 import { useOneBox } from "../../store";
 import { Show, batch, createMemo, createSignal, onCleanup, } from "solid-js";
-import { watch } from "~/utils/solid";
+import { nextTick, watch } from "~/utils/solid";
 import { Lang, LangDescriptions } from "~/utils/lang";
 import { guessLangFromContent } from "~/utils/langUtils";
 import { entries, map } from "lodash";
@@ -20,8 +20,9 @@ export default function EditorPanel(props: AdaptedPanelProps) {
   const [hasFocus, setHasFocus] = createSignal(false)
 
   const rename = () => {
-    const newName = prompt('Rename File', file.filename);
-    if (newName) runAndKeepCursor(() => editor, () => file.setFilename(newName))
+    runAndKeepCursor(() => editor, async () => {
+      await oneBox.api.interactiveRenameFile(file.filename)
+    })
   };
 
   const removePanel = () => {
@@ -160,7 +161,7 @@ export default function EditorPanel(props: AdaptedPanelProps) {
           // dockview interaction fix
           {
             watch(isActive, isActive => {
-              if (isActive) setTimeout(() => editor?.focus())
+              if (isActive) nextTick(() => editor?.focus())
             })
 
             watch(() => oneBox.panels.state.isDraggingPanel, isDraggingPanel => {

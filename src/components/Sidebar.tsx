@@ -34,10 +34,7 @@ export function Sidebar(props: { id: string }) {
 
       if (ev.key === 'F2' || ev.key === 'Enter') {
         ev.preventDefault()
-        if (file) {
-          const newName = prompt('Rename File', file.filename);
-          if (newName) file.setFilename(newName)
-        }
+        oneBox.api.interactiveRenameFile(file?.filename)
         return
       }
 

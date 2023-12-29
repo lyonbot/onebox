@@ -9,6 +9,8 @@ import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
 import { downloadFile } from '~/utils/files'
 import { Lang } from '~/utils/lang'
 import { Buffer } from "buffer";
+import { Nil } from 'yon-utils'
+import { extname } from '~/utils/langUtils'
 
 export type OneBox = ReturnType<typeof createOneBoxStore>
 
@@ -65,7 +67,7 @@ function createOneBoxStore() {
           ...f,
           contentBinary: f.contentBinary && Buffer.from(f.contentBinary).toString('base64')
         })),
-        dockview: cloneDeepWith(panels.state.dockview?.toJSON(), (value, key) => {
+        dockview: cloneDeepWith(panels.state.dockview?.toJSON(), (value) => {
           if (typeof value === 'function') return null
         })
       }
@@ -100,6 +102,23 @@ function createOneBoxStore() {
       return true
     },
 
+    async interactiveRenameFile(filename: string | Nil) {
+      if (!filename) return
+
+      const file = files.controllers()[filename]
+      if (!file) return
+
+      const newName = await ui.api.prompt(
+        'Rename to', {
+        default: filename,
+        onMount(ev) {
+          if (ev.inputBox.selectionEnd) ev.inputBox.selectionEnd -= extname(filename).length
+        }
+      })
+      if (!newName) return
+
+      file.setFilename(newName)
+    },
     downloadCurrentFile() {
       const file = files.state.files.find(f => f.filename === panels.state.activePanel?.filename)
       if (!file) return
@@ -107,8 +126,8 @@ function createOneBoxStore() {
       downloadFile(file.filename, file.contentBinary || file.content)
     },
 
-    downloadCurrentProject() {
-      const name = prompt('Enter file name (without .zip)', title())
+    async downloadCurrentProject() {
+      const name = await ui.api.prompt('Enter file name (without .zip)', { default: title() })
       if (!name) return
 
       const zip = new JSZip()
@@ -141,6 +160,8 @@ function createOneBoxStore() {
     owner,
     ui,
     api,
+
+    prompt: ui.api.prompt,
   }
 
   return root

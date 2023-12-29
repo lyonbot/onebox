@@ -41,11 +41,12 @@ export function OneBoxDockview() {
       tabComponents: {
         adaptor: adaptors.DockviewTabAdaptor,
       },
-      createLeftHeaderActionsElement: () => simpleRendererAdaptor(() => (
+      createLeftHeaderActionsElement: (group) => simpleRendererAdaptor(() => (
         <button
           class="ob-tab-createBtn"
           onClick={(ev) => {
             ev.preventDefault()
+            group.activePanel?.api.setActive()
             oneBox.api.createEmptyFile(undefined, (ev.metaKey || ev.ctrlKey || ev.shiftKey) ? 'right' : 'within')
           }}
           onMouseEnter={oneBox.ui.api.getActionHintEvForMouse(
@@ -69,7 +70,7 @@ export function OneBoxDockview() {
   }
 
   return <div
-    class="dockview-theme-light absolute inset-0 backface-hidden"
+    class="dockview-theme-light isolate absolute inset-0 backface-hidden"
     ref={setupWithDiv}
   />
 }

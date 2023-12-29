@@ -1,15 +1,18 @@
 import localForage from 'localforage';
 import { JSXElement } from 'solid-js';
 import { createStore } from 'solid-js/store';
+import { PromptRequest } from '~/components/PromptBox';
 import { watch } from '~/utils/solid';
 
 const LS_DARK_MODE = 'oneBox:darkMode';
+
 
 export function createUIStore() {
   const [state, update] = createStore({
     showSidebar: true,
     darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
-    actionHints: [] as JSXElement[]
+    actionHints: [] as JSXElement[],
+    promptRequest: null as [req: PromptRequest, resolve: (value: string | null) => void] | null,
   });
 
   localForage.getItem<boolean>(LS_DARK_MODE).then(val => {
@@ -46,7 +49,21 @@ export function createUIStore() {
 
         target.addEventListener('mouseleave', remove, { once: true });
       }
-    }
+    },
+    prompt(title: JSXElement | (() => JSXElement), opts?: Partial<PromptRequest>): Promise<string | null> {
+      if (state.promptRequest) state.promptRequest[1](null);
+
+      return new Promise(resolve => {
+        const req: PromptRequest = {
+          title,
+          ...opts,
+        }
+        update('promptRequest', [req, (value) => {
+          update('promptRequest', null);
+          resolve(value);
+        }]);
+      })
+    },
   };
 
   return {

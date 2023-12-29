@@ -80,10 +80,8 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
             oneBox.panels.api.closePanel(panelId)
           }
 
-          const rename = () => {
-            const file = oneBox.files.api.getControllerOf(panelData.filename)!; // assuming not change
-            const newName = prompt('Rename File', file.filename);
-            if (newName) file.setFilename(newName);
+          const rename = async () => {
+            await oneBox.api.interactiveRenameFile(panelData.filename)
           };
 
           const copyPanel = () => {

@@ -58,7 +58,7 @@ select:not(:disabled) {
   grid-area: statusBar;
 }
 
-.ob-dropFileMask {
+.ob-fullScreenMask {
   position: fixed;
   inset: 0;
   align-items: center;
@@ -66,5 +66,10 @@ select:not(:disabled) {
   display: flex;
   flex-direction: column;
   background: #fff9;
+  z-index: 1;
+}
+
+.ob-dropFileMask {
+  @extend .ob-fullScreenMask;
   pointer-events: none;
 }

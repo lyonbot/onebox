@@ -13,6 +13,7 @@ import { scanFiles } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
 import { VTextFileController } from "./store/files";
 import { Buffer } from "buffer";
+import { PromptBox } from "./components/PromptBox";
 
 const global = window as any
 global.monaco = monaco
@@ -105,6 +106,10 @@ export default function App() {
           <div><i class="i-mdi-file-plus text-[32px]" /></div>
           <div>Drop to Import Files</div>
         </div>
+      </Show>
+
+      <Show when={!!oneBox.ui.state.promptRequest}>
+        <PromptBox req={oneBox.ui.state.promptRequest![0]} onResolve={oneBox.ui.state.promptRequest![1]} />
       </Show>
     </div>
   );

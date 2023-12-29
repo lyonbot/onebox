@@ -63,3 +63,7 @@ export function createLifecycleArray<T extends object>() {
 
   return answer
 }
+
+export function nextTick(callback?: () => void) {
+  return new Promise(resolve => setTimeout(resolve, 0)).then(callback)
+}
