@@ -8,6 +8,7 @@ import { guessLangFromContent } from "~/utils/langUtils";
 import { entries, map } from "lodash";
 import { AdaptedPanelProps } from '../adaptor';
 import { BinaryDisplay } from '~/components/BinaryDisplay';
+import { runAndKeepCursor } from '~/monaco/utils';
 
 export default function EditorPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
@@ -15,12 +16,12 @@ export default function EditorPanel(props: AdaptedPanelProps) {
   const panelId = props.id
 
   let editor: monaco.editor.IStandaloneCodeEditor | undefined
-  const isActive = createMemo(() => props.id === oneBox.panels.state.activePanelId)
+  const isActive = createMemo(() => panelId === oneBox.panels.state.activePanelId)
   const [hasFocus, setHasFocus] = createSignal(false)
 
   const rename = () => {
     const newName = prompt('Rename File', file.filename);
-    if (newName) file.setFilename(newName);
+    if (newName) runAndKeepCursor(() => editor, () => file.setFilename(newName))
   };
 
   const removePanel = () => {
@@ -41,24 +42,12 @@ export default function EditorPanel(props: AdaptedPanelProps) {
     const description = LangDescriptions[lang];
     const ext = description.extname || '.txt';
 
-    const cursor = editor?.getSelections()?.map(x => x.toJSON())
-    const scrollPos: monaco.editor.INewScrollPosition = {
-      scrollLeft: editor?.getScrollLeft(),
-      scrollTop: editor?.getScrollTop(),
-    }
-
-    batch(() => {
-      file.setFilename(file.filename.replace(/(\.\w+)?$/, ext));
-      file.setLang(lang);
+    runAndKeepCursor(() => editor, () => {
+      batch(() => {
+        file.setFilename(file.filename.replace(/(\.\w+)?$/, ext));
+        file.setLang(lang);
+      })
     })
-
-    setTimeout(() => {
-      if (editor) {
-        editor.focus()
-        editor.setSelections(cursor as any)
-        editor.setScrollPosition(scrollPos, monaco.editor.ScrollType.Immediate)
-      }
-    }, 100)
   }
 
   watch(hasFocus, f => f && onCleanup(oneBox.ui.api.addActionHint(<>
