@@ -69,7 +69,7 @@ export function setupMonacoOneBoxFileIntegration(oneBox: OneBox) {
     openCodeEditor(editor, url, selection) {
       const filename = url.path.slice(1) // remove leading /
 
-      if (oneBox.files.api.getControllerOf(filename)) {
+      if (oneBox.api.getFile(filename)) {
         // exists
         oneBox.api.openFile(filename)
 

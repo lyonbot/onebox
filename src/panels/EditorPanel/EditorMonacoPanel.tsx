@@ -129,7 +129,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
             editor.addAction({
               id: 'oneBox.createFile',
               label: 'New File',
-              run: () => void oneBox.api.createEmptyFile(),
+              run: () => void oneBox.api.createFileAndOpen(),
               keybindings: [],
             })
 

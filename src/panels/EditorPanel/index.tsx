@@ -6,7 +6,7 @@ import EditorMonacoPanel from "./EditorMonacoPanel"
 
 export default function EditorPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
-  const getFile = createMemo(() => oneBox.files.api.getControllerOf(props.params.filename))
+  const getFile = createMemo(() => oneBox.api.getFile(props.params.filename))
   const content = createMemo(() => {
     const file = getFile()
 

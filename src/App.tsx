@@ -8,7 +8,7 @@ import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
 import { clsx, modKey, getSearchMatcher, Nil } from "yon-utils";
-import { getProjectArchiveReader, guessFileNameType, isValidFilename, scanFilesFromDataTransferItem, scanFilesFromEntry } from "./utils/files";
+import { getProjectArchiveReader, guessFileNameType, isValidFilename, scanFilesFromDataTransferItem } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
 import { Buffer } from "buffer";
 import { PromptBox } from "./components/PromptBox";
@@ -72,7 +72,7 @@ export default function App() {
           }).then(filename => {
             if (!filename) return
             if (filename.startsWith(createNewFilePlaceholder)) {
-              oneBox.api.createEmptyFile(filename.slice(createNewFilePlaceholder.length))
+              oneBox.api.createFileAndOpen(filename.slice(createNewFilePlaceholder.length))
             } else {
               oneBox.api.openFile(filename)
             }
@@ -192,7 +192,7 @@ export default function App() {
     if ((ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *')) return
 
     const editor = oneBox.panels.state.activeMonacoEditor
-    const file = oneBox.files.api.getControllerOf(oneBox.api.getCurrentFilename())
+    const file = oneBox.api.getFile(oneBox.api.getCurrentFilename())
     const handlers: (() => void)[] = []
 
     // ----------------------------
@@ -245,7 +245,7 @@ export default function App() {
           }])
         } else {
           batch(() => {
-            const newFile = oneBox.api.createEmptyFile('pasted.txt')
+            const newFile = oneBox.api.createFileAndOpen('pasted.txt')
             newFile.setContent(text)
           })
         }
@@ -271,7 +271,7 @@ function EditZone() {
 
     setTimeout(() => {
       if (!oneBox.api.loadLastProject()) {
-        // oneBox.api.createEmptyFile()
+        // oneBox.api.createFileAndOpen()
       }
 
       // update cache when window lost focus, or mouse leave the whole window

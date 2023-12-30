@@ -16,8 +16,8 @@ declare module "~/plugins" {
 
 export default function DiffPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
-  const file1 = createMemo(() => oneBox.files.api.getControllerOf(props.params.filename))
-  const file2 = createMemo(() => oneBox.files.api.getControllerOf(props.params.diff?.filename2))
+  const file1 = createMemo(() => oneBox.api.getFile(props.params.filename))
+  const file2 = createMemo(() => oneBox.api.getFile(props.params.diff?.filename2))
   const panelId = props.id
 
   const [editor, setEditor] = createSignal<monaco.editor.IStandaloneDiffEditor | null>(null)

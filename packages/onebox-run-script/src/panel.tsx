@@ -13,7 +13,7 @@ import { clamp } from "lodash"
 
 export default function RunScriptPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
-  const file = createMemo(() => oneBox.files.api.getControllerOf(props.params.filename))
+  const file = createMemo(() => oneBox.api.getFile(props.params.filename))
   const [sandbox, setSandbox] = createSignal(null as null | { iframe: HTMLIFrameElement, document: Document, window: Window })
 
   const runScriptConf = createMemo(() => props.params.runScript!)
@@ -116,7 +116,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
             el.contentWindow!.document.createElement;
             doc = el.contentWindow!.document
             doc.write('&nbsp;')
-            doc.title = 'ZZZZZ'
+            doc.title = 'OneBox Sandbox'
           } catch (e) {
             await delay(100)
           }
@@ -132,7 +132,8 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
         const waitDevToolReady = makePromise<void>()
 
-        localStorage.setItem('panel-selectedTab', '"console"');
+        if (!localStorage.getItem('panel-selectedTab')) localStorage.setItem('panel-selectedTab', '"console"');
+        if (!localStorage.getItem('uiTheme')) localStorage.setItem('uiTheme', '"default"'); // light theme
 
         // setup message forwarding
         const messageForward = (event: MessageEvent): void => {

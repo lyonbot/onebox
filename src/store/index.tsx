@@ -42,8 +42,14 @@ function createOneBoxStore() {
     getCurrentFilename() {
       return panels.state.activePanel?.filename || ''
     },
-    createEmptyFile(filename?: string, openPosition?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
-      const file = files.api.createFile({ filename })
+    getCurrentFile() {
+      return files.api.getControllerOf(api.getCurrentFilename())
+    },
+    getFile(filename: string) {
+      return files.api.getControllerOf(filename)
+    },
+    createFileAndOpen(filename?: string | Partial<VTextFile>, openPosition?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
+      const file = files.api.createFile(typeof filename === 'string' ? { filename } : filename || {})
       if (openPosition !== false) panels.api.openPanel({ filename: file.filename }, openPosition || 'within')
 
       return file

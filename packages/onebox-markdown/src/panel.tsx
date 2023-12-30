@@ -11,7 +11,7 @@ import { getModifiedMarkdownIt } from "./hyperMarkdownIt"
 
 export default function MarkdownPreviewPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
-  const file = createMemo(() => oneBox.files.api.getControllerOf(props.params.filename))
+  const file = createMemo(() => oneBox.api.getFile(props.params.filename))
 
   watch(() => `📘 ${file()?.filename}`, title => props.updateParams('title', title))
 
@@ -34,7 +34,7 @@ function Markdown(props: { file: VTextFileController, panelId: string }) {
   function getFileFromURL(url: string | Nil) {
     if (!url) return
     const rel = decodeURI(url.replace(/^\.\//, '').replace(/[?#].*$/, ''))
-    const ctrl = oneBox.files.api.getControllerOf(rel)
+    const ctrl = oneBox.api.getFile(rel)
 
     if (ctrl) return ctrl
     return

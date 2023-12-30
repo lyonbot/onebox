@@ -9,7 +9,7 @@ function Watermark() {
 
   return <div
     class="ob-watermark"
-    onDblClick={e => (e.preventDefault(), oneBox.api.createEmptyFile())}
+    onDblClick={e => (e.preventDefault(), oneBox.api.createFileAndOpen())}
     onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
       <div class='ob-status-actionHint'>
         <kbd><i class='i-ob-mouse-left' />x2</kbd>
@@ -29,7 +29,7 @@ function Watermark() {
       <p class="text-lg">Create a file to start</p>
 
       <p>
-        <button class="ob-watermark-bigButton" onClick={() => oneBox.api.createEmptyFile()}>
+        <button class="ob-watermark-bigButton" onClick={() => oneBox.api.createFileAndOpen()}>
           <i class="i-mdi-plus"></i>
           New File
         </button>
@@ -73,7 +73,7 @@ export function OneBoxDockview() {
           onClick={(ev) => {
             ev.preventDefault()
             group.activePanel?.api.setActive()
-            oneBox.api.createEmptyFile(undefined, (ev.metaKey || ev.ctrlKey || ev.shiftKey) ? 'right' : 'within')
+            oneBox.api.createFileAndOpen(undefined, (ev.metaKey || ev.ctrlKey || ev.shiftKey) ? 'right' : 'within')
           }}
           onMouseEnter={oneBox.ui.api.getActionHintEvFor(
             <div class='ob-status-actionHint'>

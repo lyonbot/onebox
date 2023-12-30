@@ -11,7 +11,7 @@ export function Sidebar(props: { id: string }) {
     const filename = oneBox.api.getCurrentFilename()
     if (!filename) return null;
 
-    return oneBox.files.api.getControllerOf(filename)
+    return oneBox.api.getFile(filename)
   });
 
   const [width, setWidth] = useLocalStorage(LC_WIDTH, 300);
@@ -87,7 +87,7 @@ export function Sidebar(props: { id: string }) {
                   oneBox.panels.api.closePanel(isOpened()!.id);
                 } else {
                   // delete file
-                  oneBox.files.api.getControllerOf(file.filename)!.delete()
+                  oneBox.api.getFile(file.filename)!.delete()
                 }
               }
             }}
@@ -115,7 +115,7 @@ export function Sidebar(props: { id: string }) {
                 class="ob-sidebar-item-action"
                 onClick={ev => {
                   ev.stopPropagation()
-                  oneBox.files.api.getControllerOf(file.filename)?.delete()
+                  oneBox.api.getFile(file.filename)?.delete()
                 }}
                 title={`Delete File "${file.filename}"`}
               >
@@ -129,7 +129,7 @@ export function Sidebar(props: { id: string }) {
       {/* a empty area to dbl-click create file */}
       <div
         class="flex-1 min-h-2xl"
-        onDblClick={e => (e.preventDefault(), oneBox.api.createEmptyFile())}
+        onDblClick={e => (e.preventDefault(), oneBox.api.createFileAndOpen())}
         onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
           <div class='ob-status-actionHint'>
             <kbd><i class='i-ob-mouse-left' />x2</kbd>
