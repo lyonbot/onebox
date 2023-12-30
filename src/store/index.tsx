@@ -199,6 +199,7 @@ function createOneBoxStore() {
     api,
 
     prompt: ui.api.prompt,
+    confirm: ui.api.confirm,
   }
 
   return root

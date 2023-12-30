@@ -70,6 +70,21 @@ export function createUIStore() {
         }]);
       })
     },
+    confirm(title: JSXElement | (() => JSXElement)): Promise<boolean> {
+      const options = [
+        { label: 'Yes', value: 'yes' },
+        { label: 'No', value: 'no' },
+      ];
+      return api.prompt(title, {
+        enumOptions: (input) => {
+          if (!input) return options;
+          if (/[y1t]|^o/i.test(input)) return [options[0]]
+          if (/[n0f]/i.test(input)) return [options[1]]
+
+          return []
+        },
+      }).then(v => v === 'yes')
+    },
   };
 
   return {

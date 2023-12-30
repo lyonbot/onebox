@@ -1,6 +1,6 @@
 /* @refresh granular */
 import { Show, batch, createSignal, getOwner, onMount, runWithOwner } from "solid-js";
-import { useOneBox } from "./store";
+import { ExportedProjectData, useOneBox } from "./store";
 import { Sidebar } from "./components/Sidebar";
 import * as monaco from 'monaco-editor';
 import _ from 'lodash'
@@ -8,7 +8,7 @@ import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
 import { clsx, modKey, getSearchMatcher, Nil } from "yon-utils";
-import { guessFileNameType, isValidFilename, scanFiles } from "./utils/files";
+import { getProjectArchiveReader, guessFileNameType, isValidFilename, scanFilesFromDataTransferItem, scanFilesFromEntry } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
 import { VTextFileController } from "./store/files";
 import { Buffer } from "buffer";
@@ -142,21 +142,40 @@ export default function App() {
 
   async function importFilesFromEvent(dataTransfer: DataTransfer) {
     const imported = [] as VTextFileController[];
+    const items: [name: string, file: File][] = []
+
     for (const rawItem of dataTransfer.items) {
-      const handle = rawItem.webkitGetAsEntry?.();
-      if (handle) {
-        for await (const [name, file] of scanFiles(handle)) {
-          await pushFile(file, name);
-        }
-      } else {
-        // maybe just a file from screenshot
-        const file = rawItem.getAsFile();
-        if (file) await pushFile(file, file.name);
+      for await (const iterator of scanFilesFromDataTransferItem(rawItem)) {
+        items.push(iterator)
       }
     }
-    return imported;
 
-    async function pushFile(file: File, name: string) {
+    // maybe importing a project archive
+    if (items.length === 1 && items[0][0].endsWith('.zip')) {
+      const archiveLoader = await getProjectArchiveReader(items[0][1]).catch(() => null)
+      if (archiveLoader && await oneBox.confirm(<div>
+        <p>Do you want to <b>Import project archive</b> "{archiveLoader.project.title}" ?</p>
+        <p class="text-orange-6"><i class="i-mdi-warning"></i> Will empty current files!</p>
+      </div>)) {
+        // import project, skip all things
+
+        const files = await archiveLoader.getCompletedFiles()
+        const fullProject: ExportedProjectData = {
+          ...archiveLoader.project,
+          files,
+        }
+
+        batch(() => {
+          oneBox.api.importProject(fullProject)
+        })
+
+        // TODO: add error msg toast
+        return []
+      }
+    }
+
+    return await Promise.all(items.map(pushFile))
+    async function pushFile([name, file]: [string, File]) {
       const isTextFile = file.type.startsWith('text/') || file.type.includes('/json');
       imported.push(oneBox.files.api.createFile({
         filename: name,
