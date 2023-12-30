@@ -35,14 +35,14 @@ select:not(:disabled) {
     filter: contrast(0.9) saturate(0.7) invert(1) hue-rotate(180deg);
 
     #ob-statusBar {
-      filter: brightness(0.7) invert(1) hue-rotate(180deg);
       background: #000;
     }
 
+    #ob-statusBar,
     .ob-darkMode-intact,
     .markdown-body img,
     .markdown-body video {
-      filter: brightness(0.7) invert(1) hue-rotate(180deg);
+      filter: invert(1) brightness(1.15) hue-rotate(180deg);
     }
   }
 }

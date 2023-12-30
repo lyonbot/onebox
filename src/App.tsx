@@ -81,6 +81,12 @@ export default function App() {
         return
       }
 
+      if (modKey(ev) === modKey.Mod && ev.code == 'Enter') {
+        ev.preventDefault()
+        oneBox.api.interactiveSummonAction(oneBox.api.getCurrentFilename())
+        return
+      }
+
       if (modKey(ev) === 0 && ev.code === 'F2') {
         ev.preventDefault()
         oneBox.api.interactiveRenameFile(oneBox.api.getCurrentFilename())
