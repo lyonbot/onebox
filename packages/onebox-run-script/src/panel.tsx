@@ -33,7 +33,8 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
   const [isResizing, setIsResizing] = createSignal(false)
 
   watch(() => runScriptConf().randomKey, () => {
-    if (runScriptConf().alwaysReconstruct) {
+    const mode = runScriptConf().mode ?? 'refreshing'
+    if (mode === 'refreshing') {
       // destroy the iframe
       reconstruct()
     } else {
@@ -45,23 +46,23 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
   let wrapperDiv: null | HTMLDivElement = null
   let devtoolIFrame: HTMLIFrameElement | null = null
 
-  const changeAlwaysReconstruct = () => {
-    oneBox.prompt('When press F5 in code editor, should the sandbox be reconstructed?', {
+  const changeRunnerMode = () => {
+    oneBox.prompt('How to re-run? (eg. press F5 in code editor)', {
       enumOptions: () => [
-        { value: '1', label: 'Yes, Always Reconstruct the Sandbox!' },
-        { value: '0', label: <div>Nope, just run code (very friendly to <code>var</code>s)</div> },
+        { value: 'refreshing', label: 'Always refresh the whole Sandbox!' },
+        { value: 'incremental', label: 'Retain existing variables in iframe when re-run. I\'ll manually refresh.' },
       ],
     }).then(ans => {
       if (!ans) return // cancel
-      props.updateParams('runScript', 'alwaysReconstruct', ans === '1')
+      props.updateParams('runScript', 'mode', ans as any)
     })
   }
 
   return createMemo(on(reconstructCounter, () => <div class="h-full relative flex flex-col" ref={div => (wrapperDiv = div)}>
     <div class="ob-toolbar">
-      <button onClick={changeAlwaysReconstruct}>{
-        runScriptConf().alwaysReconstruct ? 'Refreshing Mode' : 'Incremental Mode'
-      }</button>
+      <button onClick={changeRunnerMode}>
+        <i class="i-mdi-cog-play"></i> mode: {runScriptConf().mode}
+      </button>
       <button onClick={reconstruct}><i class="i-mdi-refresh"></i> Refresh Sandbox</button>
 
       <button onClick={() => void props.updateParams('runScript', 'showHTMLPreview', x => !x)}><i class="i-mdi-eye"></i> HTML Preview</button>

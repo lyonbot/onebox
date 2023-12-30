@@ -9,7 +9,7 @@ declare module "~/plugins" {
   export interface OneBoxPanelData {
     runScript?: {
       randomKey: string // change this to re-run
-      alwaysReconstruct?: boolean
+      mode?: 'refreshing' | 'incremental'
       showHTMLPreview?: boolean
       htmlPreviewHeight?: number // percentage 0-100
     }
@@ -25,7 +25,7 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
   function runScript(file: VTextFileController) {
     if (!langs.has(file.lang)) return
 
-    const existingPanelId = oneBox.panels.state.panels.find(p => p.panelType === 'onebox-run-script' && p.filename === file.filename)?.id
+    const existingPanelId = getExistingRunnerPanelId(file)
     if (existingPanelId) {
       oneBox.panels.api.updatePanel(existingPanelId)('runScript', 'randomKey', 'S' + Math.random())
     } else {
@@ -34,7 +34,7 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
         filename: file.filename,
         runScript: {
           randomKey: 'init',
-          alwaysReconstruct: true,
+          mode: 'refreshing',
           htmlPreviewHeight: 30,
           showHTMLPreview: false,
         },
@@ -49,21 +49,23 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
     },
     async *getActions(file) {
       if (!langs.has(file.lang)) return
+      const alreadyRan = !!getExistingRunnerPanelId(file)
 
       yield {
-        label: () => <div><i class="i-mdi-play"> </i> Run Script</div>,
-        value: 'run script',
+        label: () => <div><i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : 'Run'} Script</div>,
+        value: 'rerun run script',
         run: () => runScript(file),
       }
     },
     setupMonacoEditor({ file, editor }) {
-      watch(() => langs.has(file.lang), has => {
+      watch(() => langs.has(file.lang) && (getExistingRunnerPanelId(file) || '<no run yet>'), has => {
         if (!has) return
 
         const id = 'oneBox:runScript'
+        const alreadyRan = has !== '<no run yet>'
         const action = editor.addAction({
           id,
-          label: 'OneBox: Run Script',
+          label: `OneBox: ${alreadyRan ? 'Re-run' : 'Run'} Script`,
           run: () => runScript(file),
           keybindings: [monaco.KeyCode.F5],
           contextMenuGroupId: 'navigation',
@@ -75,6 +77,10 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       })
     },
   })
+
+  function getExistingRunnerPanelId(file: VTextFileController) {
+    return oneBox.panels.state.panels.find(p => p.panelType === 'onebox-run-script' && p.filename === file.filename)?.id
+  }
 }
 
 
