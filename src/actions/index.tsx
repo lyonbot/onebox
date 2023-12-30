@@ -38,7 +38,7 @@ export async function getActions(oneBox: OneBox, filename: string | Nil) {
       allList.unshift(createNewFilePlaceholder)
 
       let otherFile = await ui.api.prompt(`Diff "${file.filename}" with`, {
-        enumOptions: (keyword) => getSearchMatcher(keyword()).filter(allList)
+        enumOptions: (keyword) => getSearchMatcher(keyword).filter(allList)
           .map(x => ({
             value: x,
             label: x === createNewFilePlaceholder

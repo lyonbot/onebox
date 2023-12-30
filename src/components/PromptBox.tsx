@@ -1,17 +1,18 @@
-import { Accessor, For, JSXElement, Show, createEffect, createMemo, createSignal } from "solid-js";
+import { For, JSXElement, Show, createEffect, createMemo, createSignal } from "solid-js";
+import { Nil } from "yon-utils";
 import { nextTick, watch } from "~/utils/solid";
 
 export interface PromptRequest {
   title: JSXElement | (() => JSXElement)
   default?: string
-  enumOptions?: (input: Accessor<string>) => Array<{ value: string, label?: JSXElement | (() => JSXElement) }>
+  enumOptions?: (input: string) => Array<{ value: string, label?: JSXElement | (() => JSXElement) }> | Nil
   onMount?: (env: { inputBox: HTMLInputElement }) => void
 }
 
 export function PromptBox(props: { req: PromptRequest, onResolve: (value: string | null) => void }) {
   const [value, setValue] = createSignal<string>('')
 
-  const enumOptions = createMemo(() => props.req.enumOptions?.(value))
+  const enumOptions = createMemo(() => props.req.enumOptions?.(value()))
   const [enumIndex, setEnumIndex] = createSignal(0)
 
   watch(() => props.req, req => {
@@ -87,6 +88,9 @@ export function PromptBox(props: { req: PromptRequest, onResolve: (value: string
                     'isActive': index() === enumIndex(),
                   }}
                   onClick={() => props.onResolve(item.value)}
+                  ref={div => {
+                    watch(() => index() === enumIndex(), isActive => isActive && div.scrollIntoView({ block: 'nearest' }))
+                  }}
                 >
                   {item.label as any || item.value}
                 </div>

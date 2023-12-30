@@ -29,6 +29,7 @@ select:not(:disabled) {
   grid-template-columns: auto 1fr;
   height: 100vh;
   transition: filter .2s;
+  background: #fff;
 
   &.darkMode {
     filter: contrast(0.9) saturate(0.7) invert(1) hue-rotate(180deg);

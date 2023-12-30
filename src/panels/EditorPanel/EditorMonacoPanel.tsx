@@ -8,6 +8,7 @@ import { guessLangFromContent } from "~/utils/langUtils";
 import { entries, map } from "lodash";
 import { runAndKeepCursor } from '~/monaco/utils';
 import { VTextFileController } from '~/store/files';
+import { getSearchMatcher } from 'yon-utils';
 
 export default function EditorMonacoPanel(props: { file: VTextFileController, panelId: string }) {
   const oneBox = useOneBox()
@@ -52,7 +53,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
   watch(hasFocus, f => f && onCleanup(oneBox.ui.api.addActionHint(<>
     <div class='ob-status-actionHint'>
       <kbd>Cmd+Enter</kbd>
-      Summon a Processor
+      Summon an Action
     </div>
 
     <Show when={file.lang === Lang.UNKNOWN && guessedLang() !== Lang.UNKNOWN}>
@@ -63,20 +64,30 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
     </Show>
   </>)))
 
+  const showLangSelect = () => {
+    const options = map(entries(LangDescriptions), ([lang, desc], index) => ({ label: `${index}. ${desc.name}`, value: lang }))
+    oneBox.ui.api.prompt('Select Language', {
+      enumOptions(input) { return getSearchMatcher(input).filter(options) },
+    }).then(value => {
+      if (value) setLangKeepCursor(value as Lang)
+    })
+  }
+
   // #endregion
 
   return (
     <div class="flex flex-col h-full">
       <div class="ob-panel-toolbar">
-        <select class="border-none" value={file.lang} onChange={e => setLangKeepCursor(e.currentTarget.value as Lang)}>
-          {map(entries(LangDescriptions), ([lang, desc], index) => <option value={lang}>{index}. {desc.name}</option>)}
-        </select>
+        <button class="ob-panel-toolbarBtn" onClick={showLangSelect}>
+          <i class="i-mdi-file-outline"></i>
+          {LangDescriptions[file.lang].name}
+        </button>
 
         <Show when={guessedLang() !== file.lang}>
-          <a href="#" onClick={e => (e.preventDefault(), setLangKeepCursor(guessedLang()))}>
+          <button class="ob-panel-toolbarBtn text-green-7" onClick={() => setLangKeepCursor(guessedLang())}>
             <i class='i-mdi-thought-bubble' />
             {LangDescriptions[guessedLang()].name}?
-          </a>
+          </button>
         </Show>
       </div>
 
@@ -149,9 +160,10 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
 
             editor.addAction({
               id: 'oneBox.run',
-              label: 'OneBox: Run',
+              label: 'OneBox: Run Action',
               run: () => void oneBox.api.interactiveSummonAction(file.filename),
               keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+              contextMenuGroupId: 'navigation',
             })
           }
 

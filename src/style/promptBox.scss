@@ -18,7 +18,8 @@
 }
 
 .ob-promptBox-enum {
-  @apply m--2;
+  @apply m--2 max-h-60vh;
+  overflow-y: auto;
 }
 
 .ob-promptBox-enum-item {

@@ -8,7 +8,7 @@ import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
 import { clsx, modKey, getSearchMatcher, Nil } from "yon-utils";
-import { guessFileNameType, scanFiles } from "./utils/files";
+import { guessFileNameType, isValidFilename, scanFiles } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
 import { VTextFileController } from "./store/files";
 import { Buffer } from "buffer";
@@ -56,15 +56,15 @@ export default function App() {
           const createNewFilePlaceholder = '<create new file>:'
           oneBox.prompt('Open File', {
             enumOptions(input) {
-              const ans = getSearchMatcher(input()).filter(names)
+              const ans = getSearchMatcher(input).filter(names)
                 .map(name => ({ label: name as any, value: name }))
 
-              if (input()) ans.unshift({
+              if (isValidFilename(input)) ans.unshift({
                 label: () => <div>
                   <i class="i-mdi-plus-circle"></i>
-                  {` Create File "${input()}"`}
+                  {` Create File "${input}"`}
                 </div>,
-                value: createNewFilePlaceholder + input(),
+                value: createNewFilePlaceholder + input,
               })
 
               return ans
@@ -117,7 +117,7 @@ export default function App() {
           dragBug = 0;
           setIsAboutDropFiles(false)
 
-          handleIncomingDataTransferEvent(ev, ev.dataTransfer)
+          if (!oneBox.panels.state.isDraggingPanel) handleIncomingDataTransferEvent(ev, ev.dataTransfer)
         }, true)
       }}
       onFocusIn={() => oneBox.ui.update('rootHasFocus', x => x + 1)}

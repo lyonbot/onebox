@@ -44,3 +44,7 @@ export function guessFileNameType(filename: string) {
 
   return 'unknown'
 }
+
+export function isValidFilename(filename: string) {
+  return !!filename && /^[^\\:*?"<>|]+$/.test(filename)
+}

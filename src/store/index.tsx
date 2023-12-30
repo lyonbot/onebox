@@ -7,7 +7,7 @@ import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
 import { watch } from '~/utils/solid'
 import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
-import { downloadFile } from '~/utils/files'
+import { downloadFile, isValidFilename } from '~/utils/files'
 import { Lang, LangDescriptions } from '~/utils/lang'
 import { Buffer } from "buffer";
 import { Nil, getSearchMatcher } from 'yon-utils'
@@ -118,6 +118,11 @@ function createOneBoxStore() {
         onMount(ev) {
           if (ev.inputBox.selectionEnd) ev.inputBox.selectionEnd -= extname(filename).length
         },
+        enumOptions(input) {
+          if (input && !isValidFilename(input)) return [
+            { value: '', label: () => <span class='text-red-6'><i class="i-mdi-close"></i> Invalid Filename</span> },
+          ]
+        },
       })
       if (!newName) return
 
@@ -136,14 +141,14 @@ function createOneBoxStore() {
           label: () => <div><i class="i-mdi-thought-bubble"></i> Switch to <b class='text-green-7'>{desc.name}</b> Language</div>,
           value: 'switch to set guessed language',
           run() {
-            file.setLang(guessTo)
+            file.setLang(guessTo, true)
           },
         })
       }
 
       ui.api.prompt("Action", {
         enumOptions(input) {
-          return getSearchMatcher(input()).filter(actions)
+          return getSearchMatcher(input).filter(actions)
         },
       }).then(value => {
         const action = actions.find(a => a.value === value)
