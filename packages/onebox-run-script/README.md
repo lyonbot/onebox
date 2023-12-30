@@ -10,12 +10,21 @@ Your code will be executed in a separate iframe, and a Chrome DevTool panel will
 
 Once code updated, press `F5` again to re-run. By default we reload the whole iframe, but you can switch to **Incremental Mode** (on the left-top corner of runner panel) to execute the script, retains existing variables in iframe.
 
+To interact with OneBox API, you can use the `ob` object, which is exposed to the global scope of iframe.
+
+```js
+var data = ob.readJSON('./data.json');
+data.processed = true;
+ob.writeFile('./data2.json', data);
+```
+
 ## Features
 
 - [x] Run JavaScript in browser
 - [x] Provide a Chrome DevTool panel
 - [x] Optional incremental mode: intact existing variables in iframe when re-run
 - [x] HTML Preview
+- [x] Exposed `ob` object to access OneBox API and Files
 - [x] See network requests
 - [x] ~~Breakpoints~~ (please open real DevTool to make `debugger` works)
 - [ ] Transpile JSX / TypeScript in browser ⚛️

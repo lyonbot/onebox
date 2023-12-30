@@ -4,6 +4,10 @@ import type { OneBoxPlugin } from '~/plugins'
 import { VTextFileController } from '~/store/files'
 import { Lang } from '~/utils/lang'
 import { watch } from '~/utils/solid'
+import typesFileContent from './types?raw'
+import { setObFactory } from './runtime-api'
+import { dirname, join } from 'path'
+import JSON5 from 'json5'
 
 declare module "~/plugins" {
   export interface OneBoxPanelData {
@@ -41,6 +45,53 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       }, 'right')
     }
   }
+
+  const extraDts = [
+    'declare module "onebox-run-script-runtime" {',
+    typesFileContent,
+    '}',
+    'declare const ob: import("onebox-run-script-runtime").OBAPI;',
+  ].join('\n')
+  monaco.languages.typescript.javascriptDefaults.addExtraLib(extraDts, 'onebox-run-script.d.ts')
+  monaco.languages.typescript.typescriptDefaults.addExtraLib(extraDts, 'onebox-run-script.d.ts')
+  setObFactory(() => file => {
+    const norm = (fn: string) => join(dirname(file.filename), fn);
+
+    return ({
+      readText: fn => {
+        fn = norm(fn)
+        return oneBox.files.api.getControllerOf(fn)?.content || ''
+      },
+      readJSON(path) {
+        path = norm(path)
+        return JSON5.parse(this.readText(path))
+      },
+      writeFile: (fn, content) => {
+        fn = norm(fn)
+        if (typeof content === 'object') content = JSON.stringify(content, null, 2) + '\n'
+        else content = String(content)
+
+        const file = oneBox.files.api.getControllerOf(fn)
+        if (file) file.setContent(content)
+        else oneBox.files.api.createFile({ content, filename: fn })
+      },
+      appendFile: (fn, content) => {
+        fn = norm(fn)
+        if (typeof content === 'object') content = JSON.stringify(content, null, 2) + '\n'
+        else content = String(content)
+
+        const file = oneBox.files.api.getControllerOf(fn)
+        if (file) file.setContent(file.content + content)
+        else oneBox.files.api.createFile({ content, filename: fn })
+      },
+      openFile: (fn, pos) => {
+        fn = norm(fn)
+        if (!oneBox.files.api.getControllerOf(fn)) oneBox.files.api.createFile({ filename: fn })
+        if (pos === true) pos = 'right'
+        oneBox.api.openFile(fn, pos)
+      },
+    })
+  })
 
   return ({
     name: 'onebox-run-script',

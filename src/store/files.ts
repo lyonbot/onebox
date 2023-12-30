@@ -151,9 +151,9 @@ export function createFilesStore(root: () => OneBox) {
       const filename = nonConflictFilename(desc.filename || 'untitled.txt')
       const f: VTextFile = {
         content: '',
-        lang: Lang.UNKNOWN,
         ...desc,
         filename,
+        lang: desc.lang ||guessLangFromName(filename),
       }
       update('files', files => sortFilesByName([...files, f]))
       return filesLUT()[filename]

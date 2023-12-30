@@ -10,17 +10,20 @@ import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
 import { watch } from "~/utils/solid"
 import chiiTargetJS from "chii/public/target.js?url"
 import { clamp } from "lodash"
+import { obFactory } from "./runtime-api"
 
 export default function RunScriptPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
   const file = createMemo(() => oneBox.api.getFile(props.params.filename))
 
   const [sandbox, setSandbox] = createSignal(null as null | { iframe: HTMLIFrameElement, document: Document, window: Window })
+  const obApi = createMemo(() => file() && obFactory()(file()!))
   const runScriptInSandbox = () => {
     const { document, window } = sandbox()!;
 
     // adding if(..) to make top-level `let` works in incremental mode
     (window as any).console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
+    ;(window as any).ob = obApi()
     document.write('<script>\nif (1) {\n' + file()?.content + '\n}</script>')
   }
 
