@@ -22,7 +22,9 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
   watch(sandbox, (sandbox) => {
     if (!sandbox) return
-    sandbox.document.write('<script>\n{' + file()?.content + '\n}</script>')
+
+    // adding if(..) to make top-level `let` works in incremental mode
+    sandbox.document.write('<script>\nif (1) {\n' + file()?.content + '\n}</script>')
   })
 
   const [reconstructCounter, setReconstructCounter] = createSignal(0)
