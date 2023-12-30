@@ -3,12 +3,14 @@ import { JSX, createEffect, createMemo, createSignal, getOwner, lazy, runWithOwn
 import { Portal } from "solid-js/web";
 import { OneBox } from "~/store";
 import { UIPanel } from "~/store/panels";
-import { panelSolidComponents } from "./panels";
 import { modKey } from "yon-utils";
+import { SetStoreFunction } from "solid-js/store";
+import { getPanelSolidComponent } from "./panels";
 
 export interface AdaptedPanelProps {
   id: string;
   params: UIPanel
+  updateParams: SetStoreFunction<UIPanel>
   api: DockviewPanelApi;
   isActive: boolean;
 }
@@ -32,13 +34,14 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
           const panelData = getPanelData() // assuming the ref never change
           if (!panelData) return null
 
-          const PanelComponent = lazy(panelSolidComponents[panelData.panelType || 'default'])
+          const PanelComponent = lazy(getPanelSolidComponent(panelData.panelType || 'default'))
 
           return <Portal mount={this.element} ref={x => { x.className = 'ob-dockview-panel-content' }}>
             <PanelComponent
               id={id}
               api={parameters.api}
               params={panelData}
+              updateParams={oneBox.panels.api.updatePanel(id)}
               isActive={oneBox.panels.state.activePanelId === id}
             />
           </Portal>

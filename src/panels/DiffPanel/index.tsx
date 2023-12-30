@@ -6,6 +6,14 @@ import { VTextFileController } from "~/store/files"
 import * as monaco from "monaco-editor"
 import { getSearchMatcher, modKey } from "yon-utils"
 
+declare module "~/plugins" {
+  export interface OneBoxPanelData {
+    diff?: {
+      filename2: string
+    }
+  }
+}
+
 export default function DiffPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
   const file1 = createMemo(() => oneBox.files.api.getControllerOf(props.params.filename))
@@ -18,7 +26,7 @@ export default function DiffPanel(props: AdaptedPanelProps) {
     const allList = oneBox.files.state.files.map(f => f.filename)
     const otherFile = await oneBox.prompt('Choose a File', {
       default: def,
-      enumOptions: (keyword) => getSearchMatcher(keyword()).filter(allList).map(x => ({ value: x, label: x })),
+      enumOptions: (keyword) => getSearchMatcher(keyword).filter(allList).map(x => ({ value: x, label: x })),
     })
 
     return otherFile || ''
@@ -38,7 +46,7 @@ export default function DiffPanel(props: AdaptedPanelProps) {
 
   return <div class="h-full flex flex-col">
     <div
-      class="flex py-2 outline-none focus-within:bg-gray-2"
+      class="ob-toolbar"
       tabIndex={0}
       onFocusIn={oneBox.ui.api.getActionHintEvFor(<>
         <div class='ob-status-actionHint'> <kbd>/</kbd> Next </div>

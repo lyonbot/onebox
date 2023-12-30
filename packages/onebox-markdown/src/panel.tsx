@@ -13,6 +13,8 @@ export default function MarkdownPreviewPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
   const file = createMemo(() => oneBox.files.api.getControllerOf(props.params.filename))
 
+  watch(() => `📘 ${file()?.filename}`, title => props.updateParams('title', title))
+
   return <Show when={file()}>
     <Markdown file={file()!} panelId={props.id} />
   </Show>

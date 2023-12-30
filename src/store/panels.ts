@@ -4,21 +4,18 @@ import { SetStoreFunction, createStore } from "solid-js/store"
 import { watch } from "~/utils/solid"
 import { uniqueId } from "lodash"
 import type * as monaco from 'monaco-editor'
+import { OneBoxPanelData } from "~/plugins"
 
 export type PanelsStore = ReturnType<typeof createPanelsStore>
 
 const idPrefix = `panel-${Date.now().toString(36)}-`
 
-export interface UIPanel {
+export interface UIPanel extends OneBoxPanelData {
   id: string
   filename: string
   title?: string
   panelType?: string
   panelApi?: () => DockviewPanelApi
-
-  diff?: {
-    filename2: string
-  }
 }
 
 export function createPanelsStore(/*root: () => OneBox*/) {

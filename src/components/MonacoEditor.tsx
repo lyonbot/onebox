@@ -18,11 +18,10 @@ export interface MonacoEditorProps {
 
 export default function MonacoEditor(props: MonacoEditorProps) {
   let wrapperDiv!: HTMLDivElement
-  let editor!: monaco.editor.IStandaloneCodeEditor
   const [model, setModel] = createSignal(null as unknown as monaco.editor.ITextModel)
 
   onMount(() => {
-    editor = monaco.editor.create(wrapperDiv, {
+    const editor = monaco.editor.create(wrapperDiv, {
       language: props.language,
       value: props.value,
       model: props.model,
@@ -58,10 +57,10 @@ export default function MonacoEditor(props: MonacoEditorProps) {
     })
 
     props.onSetup?.(editor)
-  })
 
-  onCleanup(() => {
-    editor.dispose()
+    onCleanup(() => {
+      editor.dispose()
+    })
   })
 
   return <div

@@ -1,3 +1,5 @@
+/* @refresh granular */
+
 import * as monaco from 'monaco-editor';
 import MonacoEditor from "~/components/MonacoEditor";
 import { useOneBox } from "~/store";
@@ -9,6 +11,7 @@ import { entries, map } from "lodash";
 import { runAndKeepCursor } from '~/monaco/utils';
 import { VTextFileController } from '~/store/files';
 import { getSearchMatcher } from 'yon-utils';
+import { installedSetupMonacoEditor } from '~/plugins';
 
 export default function EditorMonacoPanel(props: { file: VTextFileController, panelId: string }) {
   const oneBox = useOneBox()
@@ -160,7 +163,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
 
             editor.addAction({
               id: 'oneBox.run',
-              label: 'OneBox: Run Action',
+              label: 'OneBox: Action',
               run: () => void oneBox.api.interactiveSummonAction(file.filename),
               keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
               contextMenuGroupId: 'navigation',
@@ -181,6 +184,13 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
               })
             })
           }
+
+          // plugins
+          installedSetupMonacoEditor.forEach(fn => fn({
+            panelId,
+            editor: editor!,
+            file,
+          }))
         }}
       />
     </div>

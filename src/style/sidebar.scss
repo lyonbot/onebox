@@ -16,12 +16,11 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 8px;
+  width: 6px;
   height: 100%;
   background-color: #0004;
   cursor: col-resize;
   opacity: 0;
-  z-index: 1;
 
   &:hover,
   .ob-sidebar.isResizing & {

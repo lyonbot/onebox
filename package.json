@@ -37,6 +37,7 @@
     "markdown-it": "^14.0.0",
     "monaco-editor": "^0.45.0",
     "onebox-markdown": "workspace:^",
+    "onebox-run-script": "workspace:^",
     "path-browserify": "^1.0.1",
     "solid-js": "^1.8.7",
     "yon-utils": "^0.1.18"

@@ -10,7 +10,6 @@ import { StatusBar } from "./components/StatusBar";
 import { clsx, modKey, getSearchMatcher, Nil } from "yon-utils";
 import { getProjectArchiveReader, guessFileNameType, isValidFilename, scanFilesFromDataTransferItem, scanFilesFromEntry } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
-import { VTextFileController } from "./store/files";
 import { Buffer } from "buffer";
 import { PromptBox } from "./components/PromptBox";
 import { setupMonacoEnv } from "./monaco";
@@ -27,6 +26,7 @@ export default function App() {
 
   // install plugins
   import('onebox-markdown').then(m => installPlugin(oneBox, m.default))
+  import('onebox-run-script').then(m => installPlugin(oneBox, m.default))
 
   onMount(() => {
     window.addEventListener('keydown', ev => {
@@ -141,7 +141,6 @@ export default function App() {
   );
 
   async function importFilesFromEvent(dataTransfer: DataTransfer) {
-    const imported = [] as VTextFileController[];
     const items: [name: string, file: File][] = []
 
     for (const rawItem of dataTransfer.items) {
@@ -175,9 +174,10 @@ export default function App() {
     }
 
     return await Promise.all(items.map(pushFile))
+
     async function pushFile([name, file]: [string, File]) {
       const isTextFile = file.type.startsWith('text/') || file.type.includes('/json');
-      imported.push(oneBox.files.api.createFile({
+      return (oneBox.files.api.createFile({
         filename: name,
         content: isTextFile ? await file.text() : '',
         contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),

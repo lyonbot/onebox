@@ -30,10 +30,10 @@ export async function getActions(oneBox: OneBox, filename: string | Nil) {
 
   // Diff
   actions.push({
-    label: () => <div><i class="i-mdi-scale-balance"></i> Diff</div>,
-    value: 'diff',
+    label: () => <div><i class="i-mdi-scale-balance"></i> Diff (Compare)</div>,
+    value: 'diff compare',
     async run() {
-      const allList = oneBox.files.state.files.map(f => f.filename).filter(f => f !== file.filename)
+      const allList = oneBox.files.state.files.map(f => f.filename).filter(f => f !== file.filename && !file.contentBinary)
       const createNewFilePlaceholder = '<create new file>'
       allList.unshift(createNewFilePlaceholder)
 

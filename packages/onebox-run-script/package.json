@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "onebox-run-script",
+  "type": "module",
+  "main": "src/index",
+  "dependencies": {
+    "chii": "^1.10.0",
+    "incremental-dom": "^0.7.0"
+  }
+}
