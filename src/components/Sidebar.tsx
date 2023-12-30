@@ -65,7 +65,7 @@ export function Sidebar(props: { id: string }) {
           let div!: HTMLDivElement
           const isActive = createMemo(() => file.filename === activeFile()?.filename)
           const isOpened = createMemo(() => oneBox.panels.state.panels.find(p => p.filename === file.filename))
-          watch(isActive, e => e && div.scrollIntoView(), true)
+          watch(isActive, e => e && div.scrollIntoView({ block: 'nearest' }), true)
 
           return <div
             ref={d => div = d!}
@@ -129,7 +129,7 @@ export function Sidebar(props: { id: string }) {
 
       {/* a empty area to dbl-click create file */}
       <div
-        class="flex-1 min-h-2xl"
+        class="flex-1 min-h-24"
         onDblClick={e => (e.preventDefault(), oneBox.api.createFileAndOpen())}
         onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
           <div class='ob-status-actionHint'>

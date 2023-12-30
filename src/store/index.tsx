@@ -45,7 +45,7 @@ function createOneBoxStore() {
     getCurrentFile() {
       return files.api.getControllerOf(api.getCurrentFilename())
     },
-    getFile(filename: string) {
+    getFile(filename: string | Nil) {
       return files.api.getControllerOf(filename)
     },
     createFileAndOpen(filename?: string | Partial<VTextFile>, openPosition?: false | 'within' | 'left' | 'right' | 'above' | 'below') {

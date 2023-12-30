@@ -23,7 +23,7 @@ export default function DiffPanel(props: AdaptedPanelProps) {
   const [editor, setEditor] = createSignal<monaco.editor.IStandaloneDiffEditor | null>(null)
 
   const selectFile = async (def: string | undefined) => {
-    const allList = oneBox.files.state.files.map(f => f.filename)
+    const allList = oneBox.files.state.files.filter(f => !f.contentBinary).map(f => f.filename)
     const otherFile = await oneBox.prompt('Choose a File', {
       default: def,
       enumOptions: (keyword) => getSearchMatcher(keyword).filter(allList).map(x => ({ value: x, label: x })),
