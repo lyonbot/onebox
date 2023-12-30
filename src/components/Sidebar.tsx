@@ -140,7 +140,17 @@ export function Sidebar(props: { id: string }) {
     </div>
 
     <div class="ob-sidebar-footer">
-      <a href="#" onClick={e => {
+      <button onClick={e => {
+        e.preventDefault();
+        oneBox.api.downloadCurrentProject()
+      }}
+        onMouseEnter={oneBox.ui.api.getActionHintEvFor(<span><kbd><i class='i-ob-mouse-left' /></kbd> Download Project (as .zip archive)</span>)}
+        title="Download Project"
+      >
+        <i class="i-mdi-download"></i>
+      </button>
+
+      <button onClick={e => {
         e.preventDefault();
         if (confirm('All files will be gone. Are you sure?')) {
           oneBox.api.resetProject()
@@ -151,19 +161,17 @@ export function Sidebar(props: { id: string }) {
         title="Reset Project"
       >
         <i class="i-mdi-delete-sweep"></i>
-      </a>
+      </button>
 
-      <a
-        href="https://github.com/lyonbot/onebox"
-        target="_blank"
+      <button
         title="GitHub"
+        onClick={e => window.open('https://github.com/lyonbot/onebox', '_blank')}
         onMouseEnter={oneBox.ui.api.getActionHintEvFor(<span><kbd><i class='i-ob-mouse-left' /></kbd> OneBox @ GitHub</span>)}
       >
         <i class="i-mdi-github"></i>
-      </a>
+      </button>
 
-      <a
-        href="#"
+      <button
         onClick={e => {
           e.preventDefault();
           oneBox.ui.api.toggleDarkMode()
@@ -176,7 +184,7 @@ export function Sidebar(props: { id: string }) {
             ? <i class='i-mdi-weather-sunny' />
             : <i class='i-mdi-weather-night' />
         }
-      </a>
+      </button>
     </div>
   </div >
 }

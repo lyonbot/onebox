@@ -101,4 +101,13 @@
   gap: 12px;
   border-top: 1px solid #999;
   background-color: #eee;
+
+  button {
+    border: 1px solid transparent;
+    background: transparent;
+
+    &:hover, &:focus {
+      @apply border-gray-3 shadow;
+    }
+  }
 }
