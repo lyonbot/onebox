@@ -16,8 +16,8 @@ export interface AdaptedPanelProps {
 export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
   class DockviewContentAdaptor implements IContentRenderer {
     element = document.createElement('div');
-    private $isAlive = createSignal(true);
-    private $isActive = createSignal(false);
+    $isAlive = createSignal(true);
+    $isActive = createSignal(false);
 
     init(parameters: GroupPanelContentPartInitParameters): void {
       this.element.style.display = 'contents'
@@ -70,7 +70,7 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
 
   class DockviewTabAdaptor implements ITabRenderer {
     element = document.createElement('div');
-    private $isAlive = createSignal(true);
+    $isAlive = createSignal(true);
 
     init(parameters: GroupPanelPartInitParameters): void {
       this.element.style.display = 'contents'

@@ -1,31 +1,20 @@
-import { JSXElement } from "solid-js"
-import { Fn, Nil, getSearchMatcher } from "yon-utils"
+import { Nil, getSearchMatcher } from "yon-utils"
 import { OneBox } from "~/store"
 import { Lang } from "~/utils/lang"
 import JSON5 from 'json5'
+import { OneBoxAction, installedGetActions } from "~/plugins"
 
-export type OBAction = {
-  label?: () => JSXElement
-  value: string
-  run: Fn
-}
 
 export async function getActions(oneBox: OneBox, filename: string | Nil) {
   const { files, panels, ui } = oneBox
   const file = files.api.getControllerOf(filename)
   if (!file) return []
 
-  const actions: OBAction[] = [];
-
-  // Markdown Preview
-  if (file.lang === Lang.MARKDOWN) {
-    actions.push({
-      label: () => <div><i class="i-mdi-markdown"> </i> Preview Markdown</div >,
-      value: 'preview markdown',
-      run() {
-        panels.api.openPanel({ panelType: 'markdownPreview', filename: file.filename }, 'right')
-      },
-    })
+  const actions: OneBoxAction[] = [];
+  for (const get of installedGetActions) {
+    for await (const action of get(file)) {
+      actions.push(action)
+    }
   }
 
   // JSON Formatting

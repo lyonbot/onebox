@@ -14,6 +14,7 @@ import { VTextFileController } from "./store/files";
 import { Buffer } from "buffer";
 import { PromptBox } from "./components/PromptBox";
 import { setupMonacoEnv } from "./monaco";
+import { installPlugin } from "./plugins";
 
 const global = window as any
 global.monaco = monaco
@@ -23,6 +24,9 @@ global.lodash = _
 export default function App() {
   const oneBox = useOneBox()
   setupMonacoEnv(oneBox)
+
+  // install plugins
+  import('onebox-markdown').then(m => installPlugin(oneBox, m.default))
 
   onMount(() => {
     window.addEventListener('keydown', ev => {
@@ -74,6 +78,12 @@ export default function App() {
             }
           })
         }
+        return
+      }
+
+      if (modKey(ev) === 0 && ev.code === 'F2') {
+        ev.preventDefault()
+        oneBox.api.interactiveRenameFile(oneBox.api.getCurrentFilename())
         return
       }
     });
@@ -164,12 +174,12 @@ export default function App() {
 
     const editor = oneBox.panels.state.activeMonacoEditor
     const file = oneBox.files.api.getControllerOf(oneBox.api.getCurrentFilename())
-    let handler: (() => void) | undefined
+    const handlers: (() => void)[] = []
 
     // ----------------------------
 
     if (dataTransfer.types.includes('Files')) {
-      handler = async () => {
+      handlers.push(async () => {
         // dropped files
         const imported = await importFilesFromEvent(dataTransfer);
 
@@ -201,12 +211,14 @@ export default function App() {
             oneBox.api.openFile(file.filename, 'right')
           })
         }
-      }
+      })
     }
 
     if (dataTransfer.types.some(x => x.startsWith('text/'))) {
-      handler = async () => {
+      handlers.push(async () => {
         const text = dataTransfer.getData('text/plain')
+        if (!text.trim()) return // empty
+
         if (editor) {
           editor.executeEdits('paste', [{
             range: editor.getSelection()!,
@@ -218,15 +230,15 @@ export default function App() {
             newFile.setContent(text)
           })
         }
-      }
+      })
     }
 
     // ----------------------------
 
-    if (handler) {
+    if (handlers.length) {
       ev.preventDefault()
       ev.stopPropagation()
-      handler()
+      handlers.forEach(f => f())
     }
   }
 }

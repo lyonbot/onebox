@@ -1,23 +1,7 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "jsxImportSource": "solid-js",
-    "resolveJsonModule": true,
-    "experimentalDecorators": true,
-    "jsx": "preserve",
-    "strict": true,
     "baseUrl": "./",
-    "paths": {
-      "~/*": ["./src/*"]
-    },
-    "plugins": [{ "name": "typescript-plugin-css-modules" }]
   },
-  "include": [
-    "./src/**/*.ts",
-    "./src/**/*.tsx",
-  ]
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"]
 }

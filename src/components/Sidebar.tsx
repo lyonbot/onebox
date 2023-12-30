@@ -22,6 +22,7 @@ export function Sidebar(props: { id: string }) {
   watch(hasFocus, f => f && onCleanup(oneBox.ui.api.addActionHint(<>
     {!!activeFile() && <div class='ob-status-actionHint'><kbd>F2</kbd>Rename</div>}
     {!!activeFile() && <div class='ob-status-actionHint'><kbd>Del</kbd>Delete</div>}
+    <div class='ob-status-actionHint'><kbd>Cmd+V</kbd>Paste and Create</div>
   </>)))
 
   return <div
@@ -124,6 +125,18 @@ export function Sidebar(props: { id: string }) {
           </div>
         }}
       </For>
+
+      {/* a empty area to dbl-click create file */}
+      <div
+        class="flex-1 min-h-2xl"
+        onDblClick={e => (e.preventDefault(), oneBox.api.createEmptyFile())}
+        onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
+          <div class='ob-status-actionHint'>
+            <kbd><i class='i-ob-mouse-left' />x2</kbd>
+            New File
+          </div>
+        </>)}
+      ></div>
     </div>
 
     <div class="ob-sidebar-footer">
@@ -133,18 +146,31 @@ export function Sidebar(props: { id: string }) {
           oneBox.api.resetProject()
           oneBox.api.saveLastProject()
         }
-      }} title="Reset Project">
+      }}
+        onMouseEnter={oneBox.ui.api.getActionHintEvFor(<span class="text-red-2"><kbd><i class='i-ob-mouse-left' /></kbd> Reset Project (delete all files!)</span>)}
+        title="Reset Project"
+      >
         <i class="i-mdi-delete-sweep"></i>
       </a>
 
-      <a href="https://github.com/lyonbot/onebox" target="_blank" title="GitHub">
+      <a
+        href="https://github.com/lyonbot/onebox"
+        target="_blank"
+        title="GitHub"
+        onMouseEnter={oneBox.ui.api.getActionHintEvFor(<span><kbd><i class='i-ob-mouse-left' /></kbd> OneBox @ GitHub</span>)}
+      >
         <i class="i-mdi-github"></i>
       </a>
 
-      <a href="#" onClick={e => {
-        e.preventDefault();
-        oneBox.ui.api.toggleDarkMode()
-      }} title="Toggle Dark Mode">
+      <a
+        href="#"
+        onClick={e => {
+          e.preventDefault();
+          oneBox.ui.api.toggleDarkMode()
+        }}
+        title="Toggle Dark Mode"
+        onMouseEnter={oneBox.ui.api.getActionHintEvFor(<span><kbd><i class='i-ob-mouse-left' /></kbd> Toggle Dark Mode</span>)}
+      >
         {
           oneBox.ui.state.darkMode
             ? <i class='i-mdi-weather-sunny' />
@@ -152,5 +178,5 @@ export function Sidebar(props: { id: string }) {
         }
       </a>
     </div>
-  </div>
+  </div >
 }

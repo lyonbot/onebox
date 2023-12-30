@@ -2,7 +2,7 @@
 import { basename } from "path"
 import { Show, createMemo } from "solid-js"
 import { useOneBox } from "~/store"
-import { AdaptedPanelProps } from "../adaptor"
+import { AdaptedPanelProps } from "~/panels/adaptor"
 import { VTextFileController } from "~/store/files"
 import { Fn, Nil } from "yon-utils"
 

@@ -32,10 +32,13 @@
 .ob-sidebar-files {
   flex: 1 0 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .ob-sidebar-item {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   border-bottom: 1px solid #999;
   cursor: pointer;

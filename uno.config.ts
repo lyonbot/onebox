@@ -12,17 +12,18 @@ export default defineConfig({
       },
       collections: {
         mdi: () => import('@iconify-json/mdi/icons.json').then(i => i.default),
-        ob: () => import('./src/icons/index.cjs')
-      }
-    })
+        ob: () => import('./src/icons/index.cjs') as any,
+      },
+    }),
   ],
   transformers: [transformerDirectives()],
   content: {
     filesystem: [
-      'src/**/*.tsx',
-      'src/**/*.css',
-      'src/**/*.scss',
-      'public/*.html',
-    ]
-  }
+      '!dist',
+      '!node_modules',
+      '**/*.ts',
+      '**/*.tsx',
+      '**/*.html',
+    ],
+  },
 })

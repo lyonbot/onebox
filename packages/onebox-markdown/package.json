@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "name": "onebox-markdown",
+  "type": "module",
+  "main": "src/index",
+  "dependencies": {
+    "incremental-dom": "^0.7.0"
+  }
+}

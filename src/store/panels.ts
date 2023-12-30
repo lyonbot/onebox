@@ -124,9 +124,11 @@ export function createPanelsStore(/*root: () => OneBox*/) {
       ))
 
       // sync active panel
-      dockview.onDidActivePanelChange(() => {
+      const syncActivePanelFromDockview = () => {
         update('activePanelId', dockview.activePanel?.id || '')
-      })
+      }
+      dockview.onDidActiveGroupChange(syncActivePanelFromDockview)
+      dockview.onDidActivePanelChange(syncActivePanelFromDockview)
       watch(() => state.activePanelId, id => {
         if (dockview.activePanel?.id === id) return
         dockview.getGroupPanel(id)?.api.setActive()
