@@ -1,5 +1,5 @@
 /* @refresh granular */
-import { Show, createSignal, getOwner, onMount, runWithOwner } from "solid-js";
+import { Show, batch, createSignal, getOwner, onMount, runWithOwner } from "solid-js";
 import { useOneBox } from "./store";
 import { Sidebar } from "./components/Sidebar";
 import * as monaco from 'monaco-editor';
@@ -7,13 +7,13 @@ import _ from 'lodash'
 import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
-import { clsx, modKey, getSearchMatcher } from "yon-utils";
-import './monaco/setup'
+import { clsx, modKey, getSearchMatcher, Nil } from "yon-utils";
 import { guessFileNameType, scanFiles } from "./utils/files";
 import { guessLangFromName } from "./utils/langUtils";
 import { VTextFileController } from "./store/files";
 import { Buffer } from "buffer";
 import { PromptBox } from "./components/PromptBox";
+import { setupMonacoEnv } from "./monaco";
 
 const global = window as any
 global.monaco = monaco
@@ -22,6 +22,7 @@ global.lodash = _
 
 export default function App() {
   const oneBox = useOneBox()
+  setupMonacoEnv(oneBox)
 
   onMount(() => {
     window.addEventListener('keydown', ev => {
@@ -77,46 +78,8 @@ export default function App() {
       }
     });
 
-    window.addEventListener('paste', async ev => {
-      if (ev.clipboardData?.types.includes('Files')) {
-        ev.preventDefault()
-        ev.stopPropagation()
-
-        // dropped files
-        const imported = await importFilesFromEvent(ev.clipboardData);
-
-        // paste filePath into editor; or open first 3 files if no editor focused
-        const editor = oneBox.panels.state.activeMonacoEditor
-        const file = oneBox.files.api.getControllerOf(oneBox.api.getCurrentFilename())
-        if (editor && file) {
-          // paste the urls into file
-          let convert = (filename: string) => filename
-          if (file.lang === 'markdown') {
-            convert = filename => {
-              const url = `./${filename}`
-              const guessType = guessFileNameType(filename)
-
-              if (guessType === 'image') return `![${filename}](${url})`
-              if (guessType === 'video') return `<video src="${url}" controls></video>`
-              if (guessType === 'audio') return `<audio src="${url}" controls></audio>`
-
-              return `[${filename}](${url})`
-            }
-          }
-
-          const text = imported.map(x => x.filename).map(convert).join('\n')
-          editor.executeEdits('paste', [{
-            range: editor.getSelection()!,
-            text,
-          }])
-        } else {
-          // open first 3 files
-          imported.slice(0, 3).forEach(file => {
-            oneBox.api.openFile(file.filename, 'right')
-          })
-        }
-        return
-      }
+    window.addEventListener('paste', ev => {
+      handleIncomingDataTransferEvent(ev, ev.clipboardData)
     }, true)
   });
 
@@ -125,6 +88,7 @@ export default function App() {
   return (
     <div
       id="ob-app"
+      tabindex={0}
       class={clsx(oneBox.ui.state.darkMode && 'darkMode')}
       ref={div => {
         let dragBug = 0 // dnd api bug? after first hit, (dragenter and dragleave) fire alternately
@@ -139,24 +103,15 @@ export default function App() {
           if (--dragBug === 0) setIsAboutDropFiles(false)
         }, true)
 
-        div.addEventListener('drop', async (ev) => {
+        div.addEventListener('drop', (ev) => {
           dragBug = 0;
           setIsAboutDropFiles(false)
 
-          if (ev.dataTransfer?.types.includes('Files')) {
-            ev.preventDefault()
-            ev.stopPropagation()
-
-            // dropped files
-            const imported = await importFilesFromEvent(ev.dataTransfer);
-
-            // open first 3 files
-            imported.slice(0, 3).forEach(file => {
-              oneBox.api.openFile(file.filename, 'right')
-            })
-          }
+          handleIncomingDataTransferEvent(ev, ev.dataTransfer)
         }, true)
       }}
+      onFocusIn={() => oneBox.ui.update('rootHasFocus', x => x + 1)}
+      onFocusOut={() => oneBox.ui.update('rootHasFocus', x => x - 1)}
     >
       <Sidebar id="ob-sidebar" />
       <div id="ob-editZone"><EditZone /></div>
@@ -199,6 +154,79 @@ export default function App() {
         contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),
         lang: guessLangFromName(name),
       }));
+    }
+  }
+
+  /** including paste, drop */
+  function handleIncomingDataTransferEvent(ev: Event, dataTransfer: DataTransfer | Nil) {
+    if (!dataTransfer) return
+    if ((ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *')) return
+
+    const editor = oneBox.panels.state.activeMonacoEditor
+    const file = oneBox.files.api.getControllerOf(oneBox.api.getCurrentFilename())
+    let handler: (() => void) | undefined
+
+    // ----------------------------
+
+    if (dataTransfer.types.includes('Files')) {
+      handler = async () => {
+        // dropped files
+        const imported = await importFilesFromEvent(dataTransfer);
+
+        // paste filePath into editor; or open first 3 files if no editor focused
+        if (editor && file) {
+          // paste the urls into file
+          let convert = (filename: string) => filename
+          if (file.lang === 'markdown') {
+            convert = filename => {
+              const url = `./${filename}`
+              const guessType = guessFileNameType(filename)
+
+              if (guessType === 'image') return `![${filename}](${url})`
+              if (guessType === 'video') return `<video src="${url}" controls></video>`
+              if (guessType === 'audio') return `<audio src="${url}" controls></audio>`
+
+              return `[${filename}](${url})`
+            }
+          }
+
+          const text = imported.map(x => x.filename).map(convert).join('\n')
+          editor.executeEdits('paste', [{
+            range: editor.getSelection()!,
+            text,
+          }])
+        } else {
+          // open first 3 files
+          imported.slice(0, 3).forEach(file => {
+            oneBox.api.openFile(file.filename, 'right')
+          })
+        }
+      }
+    }
+
+    if (dataTransfer.types.some(x => x.startsWith('text/'))) {
+      handler = async () => {
+        const text = dataTransfer.getData('text/plain')
+        if (editor) {
+          editor.executeEdits('paste', [{
+            range: editor.getSelection()!,
+            text,
+          }])
+        } else {
+          batch(() => {
+            const newFile = oneBox.api.createEmptyFile('pasted.txt')
+            newFile.setContent(text)
+          })
+        }
+      }
+    }
+
+    // ----------------------------
+
+    if (handler) {
+      ev.preventDefault()
+      ev.stopPropagation()
+      handler()
     }
   }
 }

@@ -10,19 +10,45 @@ function Watermark() {
   return <div
     class="ob-watermark"
     onDblClick={e => (e.preventDefault(), oneBox.api.createEmptyFile())}
-    onMouseEnter={oneBox.ui.api.getActionHintEvFor([
+    onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
       <div class='ob-status-actionHint'>
         <kbd><i class='i-ob-mouse-left' />x2</kbd>
         New File
-      </div>,
-    ])}
+      </div>
+      {!!oneBox.ui.state.rootHasFocus && <div class='ob-status-actionHint'>
+        <kbd>Cmd+V</kbd>
+        Paste from Clipboard
+      </div>}
+      <div class='ob-status-actionHint'>
+        <kbd><i class="i-mdi-file"/><i class='i-mdi-hand-okay' />Drop</kbd>
+        Import Files
+      </div>
+    </>)}
   >
     <div>
-      <p>Create a file to start</p>
-      <button onClick={() => oneBox.api.createEmptyFile()}>
-        <i class="i-mdi-plus"></i>
-        New File
-      </button>
+      <p class="text-lg">Create a file to start</p>
+
+      <p>
+        <button class="ob-watermark-bigButton" onClick={() => oneBox.api.createEmptyFile()}>
+          <i class="i-mdi-plus"></i>
+          New File
+        </button>
+      </p>
+
+      <div class="op-60 mt-16">
+        <p>
+          <i class="i-mdi-clipboard"></i> Paste from Clipboard? text or file?
+
+          {
+            oneBox.ui.state.rootHasFocus
+              ? <span> press Cmd+V</span>
+              : <span> click me</span>
+          }
+        </p>
+        <p>
+          <i class="i-mdi-hand-okay"></i> Drag-n-Drop? Accepted!
+        </p>
+      </div>
     </div>
   </div>
 }

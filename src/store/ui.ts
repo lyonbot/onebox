@@ -13,6 +13,7 @@ export function createUIStore() {
     darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
     actionHints: [] as JSXElement[],
     promptRequest: null as [req: PromptRequest, resolve: (value: string | null) => void] | null,
+    rootHasFocus: 0,
   });
 
   localForage.getItem<boolean>(LS_DARK_MODE).then(val => {

@@ -25,6 +25,11 @@ div.dv-resize-container {
   }
 }
 
+.ob-watermark-bigButton {
+  border: 1px solid #999;
+  @apply p-8 py-4 rounded-xl;
+}
+
 // tabs
 
 .ob-tab-createBtn {

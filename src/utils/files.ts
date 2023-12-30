@@ -1,3 +1,5 @@
+import { basename } from "path";
+
 type YieldItem = [name: string, file: File]
 export async function* scanFiles(e: FileSystemEntry): AsyncGenerator<YieldItem> {
   async function* traverse(entry: FileSystemEntry, pathPrefix: string): AsyncGenerator<YieldItem> {
@@ -41,8 +43,4 @@ export function guessFileNameType(filename: string) {
   if (/^(mp3|wav|ogg|flac|aac)$/i.test(ext)) return 'audio'
 
   return 'unknown'
-}
-
-export function basename(filename: string) {
-  return filename.split('/').pop() || ''
 }

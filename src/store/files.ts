@@ -1,3 +1,6 @@
+import { extname } from 'path'
+import { Buffer } from "buffer";
+import { Nil } from 'yon-utils'
 import * as monaco from 'monaco-editor'
 import { batch, createMemo, mapArray, onCleanup, untrack } from "solid-js"
 import { SetStoreFunction, createStore } from "solid-js/store"
@@ -5,9 +8,7 @@ import { Lang, LangDescriptions } from "~/utils/lang"
 import { fromPairs } from "lodash"
 import { watch } from '~/utils/solid'
 import { OneBox } from '.'
-import { extname, guessLangFromName } from '~/utils/langUtils'
-import { Buffer } from "buffer";
-import { Nil } from 'yon-utils'
+import { guessLangFromName } from '~/utils/langUtils'
 
 export type FilesStore = ReturnType<typeof createFilesStore>
 

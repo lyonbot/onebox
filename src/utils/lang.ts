@@ -11,6 +11,8 @@ export const enum Lang {
   TOML = 'toml', // key value, ini, toml, foo=bar
   STRING_LITERAL = 'string_literal',
   MARKDOWN = 'markdown',
+  HTML = 'html',
+  CSS = 'css', // can be scss
   BINARY = 'binary',
 }
 
@@ -35,6 +37,8 @@ export const LangDescriptions: Record<Lang, LangDescription> = {
   urlencoded: { name: 'URL Encoded' },
   toml: { name: 'TOML', extname: '.toml', mime: 'text/toml', monacoLanguage: 'ini', altExtname: ['.ini'] },
   string_literal: { name: 'String Literal' },
+  html: { name: 'HTML', extname: '.html', mime: 'text/html', monacoLanguage: 'html' },
+  css: { name: 'CSS', extname: '.scss', mime: 'text/css', monacoLanguage: 'scss', altExtname: ['.css', '.less'] },
   binary: {
     name: 'Binary',
     extname: '.bin',

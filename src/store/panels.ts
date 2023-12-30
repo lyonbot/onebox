@@ -71,6 +71,14 @@ export function createPanelsStore(/*root: () => OneBox*/) {
     },
     closePanel(id: string) {
       update('panels', panels => panels.filter(x => x.id !== id))
+
+      // maybe is a zombie panel from dockview
+      try {
+        const panel = state.dockview.getGroupPanel(id)
+        if (panel) state.dockview.removePanel(panel)
+      } catch {
+        // ignore errors; maybe the panel is already removed
+      }
     },
     updatePanel(id: string) {
       return ((...args: any[]) => update('panels', p => p.id === id, ...args as [any])) as SetStoreFunction<UIPanel>

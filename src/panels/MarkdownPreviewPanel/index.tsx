@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { basename } from "path"
 import { Show, createMemo } from "solid-js"
 import { useOneBox } from "~/store"
 import { AdaptedPanelProps } from "../adaptor"
 import { VTextFileController } from "~/store/files"
 import { Fn, Nil } from "yon-utils"
-import { basename } from "~/utils/files"
 
 import { watch } from "~/utils/solid"
 import { getModifiedMarkdownIt } from "./hyperMarkdownIt"
@@ -31,7 +31,7 @@ function Markdown(props: { file: VTextFileController, panelId: string }) {
 
   function getFileFromURL(url: string | Nil) {
     if (!url) return
-    const rel = decodeURIComponent(url.replace(/^\.\//, '').replace(/[?#].*$/, ''))
+    const rel = decodeURI(url.replace(/^\.\//, '').replace(/[?#].*$/, ''))
     const ctrl = oneBox.files.api.getControllerOf(rel)
 
     if (ctrl) return ctrl

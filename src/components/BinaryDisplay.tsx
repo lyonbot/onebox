@@ -57,7 +57,7 @@ export function BinaryDisplay(props: BinaryDisplayProps) {
       </Match>
 
       <Match when={props.filename.endsWith('.pdf')}>
-        <iframe class="ob-binaryDisplay-preview w-full flex-1 border-none" src={objectUrl()} />
+        <iframe class="ob-binaryDisplay-preview ob-darkMode-intact w-full flex-1 border-none" src={objectUrl()} />
       </Match>
     </Switch>
   </div>

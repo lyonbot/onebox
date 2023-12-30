@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import localForage from 'localforage'
-import { JSXElement, batch, createRoot, createSignal, getOwner } from 'solid-js'
+import { extname } from 'path'
+import { batch, createRoot, createSignal, getOwner } from 'solid-js'
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
@@ -9,8 +10,8 @@ import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
 import { downloadFile } from '~/utils/files'
 import { Lang, LangDescriptions } from '~/utils/lang'
 import { Buffer } from "buffer";
-import { Fn, Nil, getSearchMatcher } from 'yon-utils'
-import { extname, guessLangFromContent } from '~/utils/langUtils'
+import { Nil, getSearchMatcher } from 'yon-utils'
+import { guessLangFromContent } from '~/utils/langUtils'
 
 export type OneBox = ReturnType<typeof createOneBoxStore>
 

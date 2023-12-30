@@ -1,11 +1,8 @@
+import { extname } from "path";
 import { Lang, LangDescriptions } from "./lang";
 
-export function extname(filename: string) {
-  return filename.match(/\.\w+$/)?.[0].toLowerCase() || ''
-}
-
 export function guessLangFromName(filename: string, fallback = Lang.UNKNOWN): Lang {
-  const e = extname(filename)
+  const e = extname(filename).toLowerCase()
   if (!e) return fallback
 
   const guess = Object.entries(LangDescriptions).filter(([, desc]) => {
@@ -33,6 +30,14 @@ export function guessLangFromContent(str: string): Lang {
 
   if (/^([A-Fa-f0-9]{2})+$/.test(str)) {
     return Lang.HEX;
+  }
+
+  if (/^<\w+/.test(str)) {
+    return Lang.HTML;
+  }
+
+  if (/^@import/.test(str) || /^(body|html|butt|div|[.#]\w)/m.test(str)) {
+    return Lang.CSS;
   }
 
   if (/^\??\w+=/.test(str)) {

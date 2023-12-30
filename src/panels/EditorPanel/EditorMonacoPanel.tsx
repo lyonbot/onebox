@@ -23,6 +23,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
       return prev
     })
   })
+  onCleanup(() => oneBox.panels.update('activeMonacoEditor', prev => (prev === editor) ? undefined : prev))
 
   const rename = () => {
     runAndKeepCursor(() => editor, async () => {
