@@ -20,7 +20,7 @@ function Watermark() {
         Paste from Clipboard
       </div>}
       <div class='ob-status-actionHint'>
-        <kbd><i class="i-mdi-file"/><i class='i-mdi-hand-okay' />Drop</kbd>
+        <kbd><i class="i-mdi-file" /><i class='i-mdi-hand-okay' />Drop</kbd>
         Import Files
       </div>
     </>)}
@@ -90,6 +90,7 @@ export function OneBoxDockview() {
         ...simpleRendererAdaptor(() => <Watermark />, owner),
         updateParentGroup: noop,
       })),
+      floatingGroupBounds: 'boundedWithinViewport',
     })
 
     oneBox.panels.api.setupDockview(dockview)

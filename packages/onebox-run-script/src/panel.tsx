@@ -27,7 +27,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
   const [reconstructCounter, setReconstructCounter] = createSignal(0)
   const reconstruct = () => { setReconstructCounter(c => c + 1) }
-  const activePanelId = () => { props.api.setActive() }
+  const activePanel = () => { props.api.setActive(); wrapperDiv?.dispatchEvent(new MouseEvent('mousedown')) }
   const [isResizing, setIsResizing] = createSignal(false)
 
   watch(() => runScriptConf().randomKey, () => {
@@ -40,6 +40,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     }
   }, true)
 
+  let wrapperDiv: null | HTMLDivElement = null
   let devtoolIFrame: HTMLIFrameElement | null = null
 
   const changeAlwaysReconstruct = () => {
@@ -54,7 +55,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     })
   }
 
-  return createMemo(on(reconstructCounter, () => <div class="h-full relative flex flex-col">
+  return createMemo(on(reconstructCounter, () => <div class="h-full relative flex flex-col" ref={div => (wrapperDiv = div)}>
     <div class="ob-toolbar">
       <button onClick={changeAlwaysReconstruct}>{
         runScriptConf().alwaysReconstruct ? 'Refreshing Mode' : 'Incremental Mode'
@@ -73,7 +74,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     ></iframe>
 
     <Show when={runScriptConf().showHTMLPreview}>
-      <div class="bg-gray-3 w-full h-2 cursor-ns-resize" onPointerDown={ev => {
+      <div class="w-full h-6px my--2px cursor-ns-resize hover:bg-#0002" onPointerDown={ev => {
         ev.preventDefault()
         const oldValue = runScriptConf().htmlPreviewHeight! || 30
         const pixelsPerPoint = sandbox()!.iframe.offsetHeight / oldValue
@@ -93,7 +94,9 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
             devtoolIFrame!.style.pointerEvents = 'auto'
           },
         })
-      }}></div>
+      }}>
+        <div class="h-1px bg-gray-5 mt-2px"></div>
+      </div>
     </Show>
 
     {/* https://stackoverflow.com/questions/61401384/can-text-within-an-iframe-be-copied-to-clipboard#comment124556032_69741484 */}
@@ -147,8 +150,8 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
         // ------------------------------
         await waitDevToolReady
-        win.addEventListener('focus', activePanelId)
-        devtoolIFrame!.contentWindow!.addEventListener('focus', activePanelId)
+        win.addEventListener('focus', activePanel)
+        devtoolIFrame!.contentWindow!.addEventListener('focus', activePanel)
         setSandbox({ iframe: el, document: doc, window: win })
       }}
     ></iframe>

@@ -26,14 +26,14 @@ export function getModifiedMarkdownIt() {
 
     IncrementalDOM.elementOpen('pre')
 
-    token.content.split('\n').forEach((line, i) => {
+    token.content.split('\n').slice(0,-1).forEach((line, i) => {
       const lineNo = startLine + i + 1
       const element = IncrementalDOM.elementOpen('div', undefined, undefined, 'data-source-line', lineNo)
       IncrementalDOM.elementOpen('code')
       IncrementalDOM.text(line)
       IncrementalDOM.elementClose('code')
-      IncrementalDOM.elementClose('div')
       IncrementalDOM.text('\n')
+      IncrementalDOM.elementClose('div')
 
       lineMapping[lineNo] = element
     })

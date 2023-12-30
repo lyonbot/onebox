@@ -269,15 +269,18 @@ function EditZone() {
   watch(() => oneBox.panels.state.dockview, dockview => {
     if (!dockview) return
 
-    if (!oneBox.api.loadLastProject()) {
-      console.log('create empty file')
-      oneBox.api.createEmptyFile()
-    }
+    setTimeout(() => {
+      if (!oneBox.api.loadLastProject()) {
+        // oneBox.api.createEmptyFile()
+      }
 
-    // update cache when window lost focus
-    document.body.addEventListener('focusout', () => {
-      runWithOwner(owner, () => oneBox.api.saveLastProject())
-    })
+      // update cache when window lost focus, or mouse leave the whole window
+      const save = () => runWithOwner(owner, () => oneBox.api.saveLastProject())
+      document.body.addEventListener('focusout', save)
+      document.documentElement.addEventListener('mouseleave', save)
+      document.addEventListener('visibilitychange', save)
+
+    }, 100) // avoid floating group losing position (due to dockview's size not ready)
   })
 
   return <OneBoxDockview />

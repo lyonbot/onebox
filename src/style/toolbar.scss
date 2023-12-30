@@ -1,12 +1,8 @@
 .ob-toolbar {
   @apply flex py-2 outline-none px-2;
 
-  &[tabindex] {
-    @apply focus-within:bg-gray-1;
-  }
-
   button {
-    border: 0;
+    border: 1px solid transparent;
     outline: 0;
     background: transparent;
     @apply px-4 py-2 rounded;
@@ -22,8 +18,16 @@
 
       &:focus,
       &:active {
-        @extend .isActive;
+        @apply bg-gray-2;
       }
+    }
+  }
+
+  &[tabindex]:focus-within {
+    @apply bg-gray-1;
+
+    button:not(:disabled):hover {
+      @apply border-gray-3 shadow;
     }
   }
 }
