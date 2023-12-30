@@ -189,6 +189,7 @@ export default function App() {
   /** including paste, drop */
   function handleIncomingDataTransferEvent(ev: Event, dataTransfer: DataTransfer | Nil) {
     if (!dataTransfer) return
+    if (dataTransfer.types.includes('text/x-ob-dnd-ignore')) return
     if ((ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *')) return
 
     const editor = oneBox.panels.state.activeMonacoEditor

@@ -77,6 +77,7 @@ export function Sidebar(props: { id: string }) {
             draggable="true"
             onDragStart={ev => {
               ev.dataTransfer!.setData('text/plain', file.filename)
+              ev.dataTransfer!.setData('text/x-ob-dnd-ignore', 'true')
             }}
             onMouseDown={ev => {
               if (ev.button === 1) {
@@ -165,7 +166,7 @@ export function Sidebar(props: { id: string }) {
 
       <button
         title="GitHub"
-        onClick={e => window.open('https://github.com/lyonbot/onebox', '_blank')}
+        onClick={() => window.open('https://github.com/lyonbot/onebox', '_blank')}
         onMouseEnter={oneBox.ui.api.getActionHintEvFor(<span><kbd><i class='i-ob-mouse-left' /></kbd> OneBox @ GitHub</span>)}
       >
         <i class="i-mdi-github"></i>

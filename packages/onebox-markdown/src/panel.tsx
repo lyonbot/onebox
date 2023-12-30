@@ -85,17 +85,20 @@ function Markdown(props: { file: VTextFileController, panelId: string }) {
           }, 100)
         })
 
-        articleEl.addEventListener('mouseenter', ev => {
+        const goEditor = (target: HTMLElement/* , setCursor?: boolean */) => {
           const { activeMonacoEditor } = oneBox.panels.state
           if (!activeMonacoEditor) return
 
-          const lineStr = (ev.target as HTMLElement).closest('[data-source-line]')?.getAttribute('data-source-line')
+          const lineStr = target.closest('[data-source-line]')?.getAttribute('data-source-line')
           if (!lineStr) return
           const lineNo = parseInt(lineStr, 10) + tokensToRender()[2]
 
+          // if (setCursor) activeMonacoEditor.setPosition({ lineNumber: lineNo, column: 1 })
           activeMonacoEditor.revealLineInCenterIfOutsideViewport(lineNo)
           activeMonacoEditor.focus()
-        }, true)
+        }
+
+        articleEl.addEventListener('mouseenter', ev => goEditor(ev.target as HTMLElement), true)
       }}
     ></article>
   </div>

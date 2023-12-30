@@ -14,18 +14,21 @@ import { clamp } from "lodash"
 export default function RunScriptPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
   const file = createMemo(() => oneBox.api.getFile(props.params.filename))
+
   const [sandbox, setSandbox] = createSignal(null as null | { iframe: HTMLIFrameElement, document: Document, window: Window })
+  const runScriptInSandbox = () => {
+    const { document, window } = sandbox()!;
+
+    // adding if(..) to make top-level `let` works in incremental mode
+    (window as any).console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
+    document.write('<script>\nif (1) {\n' + file()?.content + '\n}</script>')
+  }
 
   const runScriptConf = createMemo(() => props.params.runScript!)
 
   watch(() => `▶️ ${file()?.filename}`, title => props.updateParams('title', title))
 
-  watch(sandbox, (sandbox) => {
-    if (!sandbox) return
-
-    // adding if(..) to make top-level `let` works in incremental mode
-    sandbox.document.write('<script>\nif (1) {\n' + file()?.content + '\n}</script>')
-  })
+  watch(sandbox, (sandbox) => sandbox && runScriptInSandbox())
 
   const [reconstructCounter, setReconstructCounter] = createSignal(0)
   const reconstruct = () => { setReconstructCounter(c => c + 1) }
@@ -39,7 +42,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
       reconstruct()
     } else {
       // just re-run the script
-      sandbox()?.document.write('<script>\n' + file()?.content + '\n</script>')
+      runScriptInSandbox()
     }
   }, true)
 
@@ -58,7 +61,13 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     })
   }
 
-  return createMemo(on(reconstructCounter, () => <div class="h-full relative flex flex-col" ref={div => (wrapperDiv = div)}>
+  // focus kludge between devtool and editor
+  const [justPointerDownAtDevTool, setJustPointerDownAtDevTool] = createSignal(false)
+
+  return createMemo(on(reconstructCounter, () => <div
+    class="h-full relative flex flex-col"
+    ref={div => (wrapperDiv = div)}
+  >
     <div class="ob-toolbar">
       <button onClick={changeRunnerMode}>
         <i class="i-mdi-cog-play"></i> mode: {runScriptConf().mode}
@@ -74,6 +83,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
       src="about:blank"
       class="border-none flex-1 w-full min-h-0"
       ref={el => { devtoolIFrame = el }}
+      data-iframe-role={justPointerDownAtDevTool() ? '' : "onebox-run-script:devtool"}
     ></iframe>
 
     <Show when={runScriptConf().showHTMLPreview}>
@@ -94,7 +104,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
           },
           onEnd() {
             setIsResizing(false)
-            devtoolIFrame!.style.pointerEvents = 'auto'
+            devtoolIFrame!.style.pointerEvents = ''
           },
         })
       }}>
@@ -106,7 +116,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     <iframe
       allow="clipboard-read *; clipboard-write *"
       src="about:blank"
-      class={clsx("border-none w-full ob-darkMode-intact bg-white", isResizing() && 'pointer-events-none')}
+      class={clsx("border-none w-full ob-darkMode-intact bg-white", (isResizing() || !sandbox()) && 'pointer-events-none')}
       style={`height: ${runScriptConf().showHTMLPreview ? `${runScriptConf().htmlPreviewHeight}%` : '0'}`}
       ref={async el => {
         const retryEnd = Date.now() + 1000
@@ -156,7 +166,12 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
         await waitDevToolReady
         win.addEventListener('focus', activePanel)
         devtoolIFrame!.contentWindow!.addEventListener('focus', activePanel)
+        devtoolIFrame!.contentWindow!.addEventListener('pointerdown', () => setJustPointerDownAtDevTool(true))
+        devtoolIFrame!.contentWindow!.addEventListener('pointerup', () => void setTimeout(() => setJustPointerDownAtDevTool(false), 100))
+
         setSandbox({ iframe: el, document: doc, window: win })
+        onCleanup(() => setSandbox(null))
+
       }}
     ></iframe>
   </div>))

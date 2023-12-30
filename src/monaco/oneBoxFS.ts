@@ -21,7 +21,9 @@ export function setupMonacoOneBoxFileIntegration(oneBox: OneBox) {
         endColumn: position.column,
       });
 
-      const match = textUntilPosition.match(/(?<=[\s'"=(<[])\.+\/[^\s'"]*$/)?.[0]
+      const m1 = textUntilPosition.lastIndexOf('./')
+      console.log('m1=', m1, ',textUntilPosition="' + textUntilPosition + '"')
+      const match = (m1 === 0 || /[\s'"=(<[]/.test(textUntilPosition[m1 - 1])) && /^[^\s'")>\]]*$/.test(textUntilPosition.slice(m1 + 2)) && textUntilPosition.slice(m1)
       if (!match) return;
 
       const currentFilePath = oneBox.api.getCurrentFilename()

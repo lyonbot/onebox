@@ -58,6 +58,18 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       }
     },
     setupMonacoEditor({ file, editor }) {
+      // when re-run code, the devtool reinit and take focus away. we must focus back to editor
+      // meanwhile, in ./panel.tsx, the iframe itself maintain the data-attr, temporally remove it when iframe is clicked
+      // what a kludge
+      editor.onDidBlurEditorText(() => {
+        setTimeout(() => {
+          if (document.activeElement?.matches('iframe[data-iframe-role="onebox-run-script:devtool"]')) {
+            editor.focus()
+          }
+        }, 50);
+      })
+
+      // add action to context menu
       watch(() => langs.has(file.lang) && (getExistingRunnerPanelId(file) || '<no run yet>'), has => {
         if (!has) return
 

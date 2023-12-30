@@ -45,8 +45,9 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
     return guessLangFromContent(file.content)
   })
 
-  const applyLangGuess = () => {
-    setLangKeepCursor(file.lang === Lang.UNKNOWN ? guessedLang() : Lang.UNKNOWN)
+  const setToUnknownOrAskLang = () => {
+    if (file.lang === Lang.UNKNOWN) askAndSetLang()
+    else setLangKeepCursor(Lang.UNKNOWN)
   }
 
   const setLangKeepCursor = (lang: Lang) => {
@@ -67,8 +68,12 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
     </Show>
   </>)))
 
-  const showLangSelect = () => {
-    const options = map(entries(LangDescriptions), ([lang, desc], index) => ({ label: `${index}. ${desc.name}`, value: lang }))
+  const askAndSetLang = () => {
+    const options = map(entries(LangDescriptions), ([lang, desc], index) => ({ label: `${index}. ${desc.name}` as any, value: lang }))
+
+    const gl = guessedLang()
+    if (gl !== file.lang) options.unshift({ label: () => <span class='text-green-7'> <i class="i-mdi-thought-bubble"></i> Guess: {LangDescriptions[gl].name}</span>, value: gl })
+
     oneBox.ui.api.prompt('Select Language', {
       enumOptions(input) { return getSearchMatcher(input).filter(options) },
     }).then(value => {
@@ -81,7 +86,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
   return (
     <div class="flex flex-col h-full">
       <div class="ob-panel-toolbar">
-        <button class="ob-panel-toolbarBtn" onClick={showLangSelect}>
+        <button class="ob-panel-toolbarBtn" onClick={askAndSetLang}>
           <i class="i-mdi-file-outline"></i>
           {LangDescriptions[file.lang].name}
         </button>
@@ -142,8 +147,8 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
 
             editor.addAction({
               id: 'oneBox.applyLangGuess',
-              label: 'Language Guess: Apply',
-              run: () => void applyLangGuess(),
+              label: 'OneBox: Set Language',
+              run: () => void setToUnknownOrAskLang(),
               keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
             })
 
