@@ -2,8 +2,23 @@ import { Nil, getSearchMatcher } from "yon-utils"
 import { OneBox } from "~/store"
 import { Lang } from "~/utils/lang"
 import JSON5 from 'json5'
-import { OneBoxAction, installedGetActions } from "~/plugins"
+import { OneBoxAction, installedPlugins } from "~/plugins"
 
+export function getQuickActions(oneBox: OneBox, filename: string | Nil) {
+  const { files } = oneBox
+  const file = files.api.getControllerOf(filename)
+  if (!file) return []
+
+  const actions: OneBoxAction[] = [];
+  for (const { getQuickActions } of installedPlugins()) {
+    if (!getQuickActions) continue
+    for (const action of getQuickActions(file)) {
+      actions.push(action)
+    }
+  }
+
+  return actions
+}
 
 export async function getActions(oneBox: OneBox, filename: string | Nil) {
   const { files, panels, ui } = oneBox
@@ -11,8 +26,9 @@ export async function getActions(oneBox: OneBox, filename: string | Nil) {
   if (!file) return []
 
   const actions: OneBoxAction[] = [];
-  for (const get of installedGetActions) {
-    for await (const action of get(file)) {
+  for (const { getActions } of installedPlugins()) {
+    if (!getActions) continue
+    for await (const action of getActions(file)) {
       actions.push(action)
     }
   }

@@ -1,5 +1,5 @@
 import type * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import type { Accessor, JSXElement } from "solid-js";
+import { createSignal, type JSXElement } from "solid-js";
 import type { Fn, Nil } from "yon-utils";
 import type { OneBox } from "./store";
 import type { VTextFileController } from "./store/files";
@@ -21,13 +21,13 @@ export interface OneBoxPluginDeclaration {
   name: string
   panels?: Record<string, () => Promise<any>>
   getActions?: (file: VTextFileController) => AsyncIterableIterator<OneBoxAction>
+  getQuickActions?: (file: VTextFileController) => Iterable<OneBoxAction>
   setupMonacoEditor?: (ctx: { file: VTextFileController, panelId: string, editor: monaco.editor.IStandaloneCodeEditor }) => void
 }
 
 export type OneBoxPlugin = (oneBox: OneBox) => OneBoxPluginDeclaration | Promise<OneBoxPluginDeclaration>
 
-export const installedGetActions = [] as NonNullable<OneBoxPluginDeclaration['getActions'] & Fn>[]
-export const installedSetupMonacoEditor = [] as NonNullable<OneBoxPluginDeclaration['setupMonacoEditor']>[]
+export const [installedPlugins, setInstalledPlugins] = createSignal<OneBoxPluginDeclaration[]>([])
 
 export async function installPlugin(oneBox: OneBox, plugin: OneBoxPlugin | Nil) {
   if (!plugin) return
@@ -36,6 +36,5 @@ export async function installPlugin(oneBox: OneBox, plugin: OneBoxPlugin | Nil) 
   if (!decl) return
 
   forEach(decl.panels, (loader, id) => setPanelSolidComponent(id, loader))
-  if (decl.getActions) installedGetActions.push(decl.getActions)
-  if (decl.setupMonacoEditor) installedSetupMonacoEditor.push(decl.setupMonacoEditor)
+  setInstalledPlugins((prev) => [...prev, decl])
 }

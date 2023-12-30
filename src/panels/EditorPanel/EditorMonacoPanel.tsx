@@ -3,7 +3,7 @@
 import * as monaco from 'monaco-editor';
 import MonacoEditor from "~/components/MonacoEditor";
 import { useOneBox } from "~/store";
-import { Show, createMemo, createSignal, onCleanup } from "solid-js";
+import { For, Show, createMemo, createSignal, onCleanup } from "solid-js";
 import { nextTick, watch } from "~/utils/solid";
 import { Lang, LangDescriptions } from "~/utils/lang";
 import { guessLangFromContent } from "~/utils/langUtils";
@@ -11,7 +11,8 @@ import { entries, map } from "lodash";
 import { runAndKeepCursor } from '~/monaco/utils';
 import { VTextFileController } from '~/store/files';
 import { getSearchMatcher } from 'yon-utils';
-import { installedSetupMonacoEditor } from '~/plugins';
+import { installedPlugins } from '~/plugins';
+import { getQuickActions } from '~/actions';
 
 export default function EditorMonacoPanel(props: { file: VTextFileController, panelId: string }) {
   const oneBox = useOneBox()
@@ -83,6 +84,8 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
 
   // #endregion
 
+  const actionsFromPlugins = createMemo(() => getQuickActions(oneBox, file.filename))
+
   return (
     <div class="flex flex-col h-full">
       <div class="ob-panel-toolbar">
@@ -97,6 +100,12 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
             {LangDescriptions[guessedLang()].name}?
           </button>
         </Show>
+
+        <For each={actionsFromPlugins()}>
+          {action => <button class="ob-panel-toolbarBtn" onClick={() => void action.run()}>
+            {action.label?.() || action.value}
+          </button>}
+        </For>
       </div>
 
       <MonacoEditor
@@ -191,7 +200,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
           }
 
           // plugins
-          installedSetupMonacoEditor.forEach(fn => fn({
+          installedPlugins().forEach(plugin => plugin.setupMonacoEditor?.({
             panelId,
             editor: editor!,
             file,

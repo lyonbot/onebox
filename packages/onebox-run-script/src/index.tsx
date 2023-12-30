@@ -57,6 +57,18 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
         run: () => runScript(file),
       }
     },
+    *getQuickActions(file) {
+      if (!langs.has(file.lang)) return
+      const alreadyRan = !!getExistingRunnerPanelId(file)
+
+      yield {
+        label: () => <div onMouseEnter={oneBox.ui.api.getActionHintEvFor(<div class='ob-status-actionHint'><kbd>F5</kbd>Run</div>)}>
+          <i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : 'Run'}
+        </div>,
+        value: 'rerun run script',
+        run: () => runScript(file),
+      }
+    },
     setupMonacoEditor({ file, editor }) {
       // when re-run code, the devtool reinit and take focus away. we must focus back to editor
       // meanwhile, in ./panel.tsx, the iframe itself maintain the data-attr, temporally remove it when iframe is clicked

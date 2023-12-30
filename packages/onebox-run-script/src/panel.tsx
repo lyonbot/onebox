@@ -64,35 +64,75 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
   // focus kludge between devtool and editor
   const [justPointerDownAtDevTool, setJustPointerDownAtDevTool] = createSignal(false)
 
-  return createMemo(on(reconstructCounter, () => <div
-    class="h-full relative flex flex-col"
-    ref={div => (wrapperDiv = div)}
-  >
-    <div class="ob-toolbar">
-      <button onClick={changeRunnerMode}>
-        <i class="i-mdi-cog-play"></i> mode: {runScriptConf().mode}
-      </button>
-      <button onClick={reconstruct}><i class="i-mdi-refresh"></i> Refresh Sandbox</button>
+  const constructSandbox = () => {
+    onCleanup(() => setSandbox(null))
+    const initializeFromSandboxIframe = async (el: HTMLIFrameElement) => {
+      const retryEnd = Date.now() + 1000
+      let doc: Document | undefined
 
-      <button onClick={() => void props.updateParams('runScript', 'showHTMLPreview', x => !x)}><i class="i-mdi-eye"></i> HTML Preview</button>
+      do {
+        try {
+          el.contentWindow!.document.createElement
+          doc = el.contentWindow!.document
+          doc.write('&nbsp;')
+          doc.title = 'OneBox Sandbox'
+        } catch (e) {
+          await delay(100)
+        }
+      } while ((!doc || !devtoolIFrame) && Date.now() < retryEnd)
 
-    </div>
+      if (!doc) {
+        console.error('iframe not ready')
+        return
+      }
 
-    <iframe
-      allow="clipboard-read *; clipboard-write *"
-      src="about:blank"
-      class="border-none flex-1 w-full min-h-0"
-      ref={el => { devtoolIFrame = el }}
-      data-iframe-role={justPointerDownAtDevTool() ? '' : "onebox-run-script:devtool"}
-    ></iframe>
+      const win = doc.defaultView!;
+      (win as any).ChiiDevtoolsIframe = devtoolIFrame
 
-    <Show when={runScriptConf().showHTMLPreview}>
+      const waitDevToolReady = makePromise<void>()
+
+      if (!localStorage.getItem('panel-selectedTab')) localStorage.setItem('panel-selectedTab', '"console"')
+      if (!localStorage.getItem('uiTheme')) localStorage.setItem('uiTheme', '"default"') // light theme
+
+
+      // setup message forwarding
+      const messageForward = (event: MessageEvent): void => {
+        win.postMessage(event.data, event.origin)
+        if (event.data?.includes?.('Runtime.runIfWaitingForDebugger')) {
+          waitDevToolReady.resolve()
+        }
+      }
+      window.addEventListener('message', messageForward)
+      onCleanup(() => window.removeEventListener('message', messageForward))
+
+      const script = doc.createElement('script')
+      script.src = chiiTargetJS + '#/target.js' // chii relys on this filename
+      script.setAttribute('cdn', 'https://cdn.jsdelivr.net/npm/chii/public')
+      script.setAttribute('embedded', 'true')
+      doc.body.appendChild(script)
+
+      // ------------------------------
+      await waitDevToolReady
+      win.addEventListener('focus', activePanel)
+      devtoolIFrame!.contentWindow!.addEventListener('focus', activePanel)
+      devtoolIFrame!.contentWindow!.addEventListener('pointerdown', () => setJustPointerDownAtDevTool(true))
+      devtoolIFrame!.contentWindow!.addEventListener('pointerup', () => void setTimeout(() => setJustPointerDownAtDevTool(false), 100))
+
+      setSandbox({ iframe: el, document: doc, window: win })
+    }
+
+    // ------------------------------
+    // the resizer between devtool and html preview
+    const resizer = <Show when={runScriptConf().showHTMLPreview}>
       <div class="w-full h-6px my--2px cursor-ns-resize hover:bg-#0002" onPointerDown={ev => {
+        const sandboxIframe = sandbox()?.iframe
+        if (!sandboxIframe || !devtoolIFrame) return
+
         ev.preventDefault()
         const oldValue = runScriptConf().htmlPreviewHeight! || 30
-        const pixelsPerPoint = sandbox()!.iframe.offsetHeight / oldValue
+        const pixelsPerPoint = sandboxIframe.offsetHeight / oldValue
         setIsResizing(true)
-        devtoolIFrame!.style.pointerEvents = 'none'
+        devtoolIFrame.style.pointerEvents = 'none'
 
         startMouseMove({
           initialEvent: ev,
@@ -112,67 +152,51 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
       </div>
     </Show>
 
-    {/* https://stackoverflow.com/questions/61401384/can-text-within-an-iframe-be-copied-to-clipboard#comment124556032_69741484 */}
-    <iframe
-      allow="clipboard-read *; clipboard-write *"
-      src="about:blank"
-      class={clsx("border-none w-full ob-darkMode-intact bg-white", (isResizing() || !sandbox()) && 'pointer-events-none')}
-      style={`height: ${runScriptConf().showHTMLPreview ? `${runScriptConf().htmlPreviewHeight}%` : '0'}`}
-      ref={async el => {
-        const retryEnd = Date.now() + 1000
-        let doc: Document | undefined
+    // ------------------------------
+    // 2 iframe + 1 resizer
+    return (<>
+      <iframe
+        allow="clipboard-read *; clipboard-write *"
+        src="about:blank"
+        class="border-none flex-1 w-full min-h-0"
+        ref={el => { devtoolIFrame = el }}
+        data-iframe-role={justPointerDownAtDevTool() ? '' : "onebox-run-script:devtool"}
+      ></iframe>
 
-        do {
-          try {
-            el.contentWindow!.document.createElement;
-            doc = el.contentWindow!.document
-            doc.write('&nbsp;')
-            doc.title = 'OneBox Sandbox'
-          } catch (e) {
-            await delay(100)
-          }
-        } while ((!doc || !devtoolIFrame) && Date.now() < retryEnd)
+      {resizer}
 
-        if (!doc) {
-          console.error('iframe not ready')
-          return
-        }
+      {/* https://stackoverflow.com/questions/61401384/can-text-within-an-iframe-be-copied-to-clipboard#comment124556032_69741484 */}
+      <iframe
+        allow="clipboard-read *; clipboard-write *"
+        src="about:blank"
+        class={clsx("border-none w-full ob-darkMode-intact bg-white", (isResizing() || !sandbox()) && 'pointer-events-none')}
+        style={`height: ${runScriptConf().showHTMLPreview ? `${runScriptConf().htmlPreviewHeight}%` : '0'}`}
+        ref={initializeFromSandboxIframe}
+      ></iframe>
+    </>
+    )
+  }
 
-        const win = doc.defaultView!;
-        (win as any).ChiiDevtoolsIframe = devtoolIFrame
+  const sandboxBody = createMemo(on(reconstructCounter, constructSandbox))
 
-        const waitDevToolReady = makePromise<void>()
+  return <div
+    class="h-full relative flex flex-col"
+    ref={div => (wrapperDiv = div)}
+  >
+    <div class="ob-toolbar">
+      <button onClick={changeRunnerMode}>
+        <i class="i-mdi-cog-play"></i> mode: {runScriptConf().mode}
+      </button>
+      <button onClick={reconstruct}><i class="i-mdi-refresh"></i> Refresh Sandbox</button>
 
-        if (!localStorage.getItem('panel-selectedTab')) localStorage.setItem('panel-selectedTab', '"console"');
-        if (!localStorage.getItem('uiTheme')) localStorage.setItem('uiTheme', '"default"'); // light theme
+      <button onClick={() => void props.updateParams('runScript', 'showHTMLPreview', x => !x)}><i class="i-mdi-eye"></i> HTML Preview</button>
+    </div>
 
-        // setup message forwarding
-        const messageForward = (event: MessageEvent): void => {
-          win.postMessage(event.data, event.origin)
-          if (event.data?.includes?.('Runtime.runIfWaitingForDebugger')) {
-            waitDevToolReady.resolve()
-          }
-        }
-        window.addEventListener('message', messageForward);
-        onCleanup(() => window.removeEventListener('message', messageForward))
+    {!sandbox() && <div class="absolute translate--50% left-50% top-50% bg-#fff9 pointer-events-none">
+      <i class="i-mdi-timer-sand-full"></i>
+      Sandbox Loading...
+    </div>}
 
-        const script = doc.createElement('script')
-        script.src = chiiTargetJS + '#/target.js'   // chii relys on this filename
-        script.setAttribute('cdn', 'https://cdn.jsdelivr.net/npm/chii/public')
-        script.setAttribute('embedded', 'true')
-        doc.body.appendChild(script)
-
-        // ------------------------------
-        await waitDevToolReady
-        win.addEventListener('focus', activePanel)
-        devtoolIFrame!.contentWindow!.addEventListener('focus', activePanel)
-        devtoolIFrame!.contentWindow!.addEventListener('pointerdown', () => setJustPointerDownAtDevTool(true))
-        devtoolIFrame!.contentWindow!.addEventListener('pointerup', () => void setTimeout(() => setJustPointerDownAtDevTool(false), 100))
-
-        setSandbox({ iframe: el, document: doc, window: win })
-        onCleanup(() => setSandbox(null))
-
-      }}
-    ></iframe>
-  </div>))
+    {sandboxBody()}
+  </div>
 }
