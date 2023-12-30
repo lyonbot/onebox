@@ -143,7 +143,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
         onCleanup(() => window.removeEventListener('message', messageForward))
 
         const script = doc.createElement('script')
-        script.src = chiiTargetJS
+        script.src = chiiTargetJS + '#/target.js'   // chii relys on this filename
         script.setAttribute('cdn', 'https://cdn.jsdelivr.net/npm/chii/public')
         script.setAttribute('embedded', 'true')
         doc.body.appendChild(script)
