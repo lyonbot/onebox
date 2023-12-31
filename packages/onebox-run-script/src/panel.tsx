@@ -26,7 +26,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     let { content } = file
 
     // transpile TS, ESM, JSX
-    if (file.lang === Lang.TYPESCRIPT || /^import\s/m.test(content) || (file.lang === Lang.JAVASCRIPT && /<\w+/.test(content))) {
+    if (file.lang === Lang.TYPESCRIPT || /^(import|export)\s/m.test(content) || (file.lang === Lang.JAVASCRIPT && /<\w+/.test(content))) {
       const tsWorkerGetter = await monaco.languages.typescript[file.lang === Lang.TYPESCRIPT ? 'getTypeScriptWorker' : 'getJavaScriptWorker']()
       const ts = await tsWorkerGetter()
       const out = await ts.getEmitOutput('file:///' + file.filename)
