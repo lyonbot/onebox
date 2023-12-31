@@ -1,13 +1,13 @@
+import JSON5 from 'json5'
 import * as monaco from 'monaco-editor'
+import { dirname, join } from 'path'
 import { onCleanup } from 'solid-js'
 import type { OneBoxPlugin } from '~/plugins'
 import { VTextFileController } from '~/store/files'
 import { Lang } from '~/utils/lang'
 import { watch } from '~/utils/solid'
-import typesFileContent from './types?raw'
 import { setObFactory } from './runtime-api'
-import { dirname, join } from 'path'
-import JSON5 from 'json5'
+import { setupMonacoTsLibs } from './setupMonacoTsLibs'
 
 declare module "~/plugins" {
   export interface OneBoxPanelData {
@@ -38,7 +38,7 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
         filename: file.filename,
         runScript: {
           randomKey: 'init',
-          mode: 'refreshing',
+          mode: 'incremental',
           htmlPreviewHeight: 30,
           showHTMLPreview: false,
         },
@@ -46,14 +46,8 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
     }
   }
 
-  const extraDts = [
-    'declare module "onebox-run-script-runtime" {',
-    typesFileContent,
-    '}',
-    'declare const ob: import("onebox-run-script-runtime").OBAPI;',
-  ].join('\n')
-  monaco.languages.typescript.javascriptDefaults.addExtraLib(extraDts, 'onebox-run-script.d.ts')
-  monaco.languages.typescript.typescriptDefaults.addExtraLib(extraDts, 'onebox-run-script.d.ts')
+  setupMonacoTsLibs()
+
   setObFactory(() => file => {
     const norm = (fn: string) => join(dirname(file.filename), fn);
 
@@ -118,6 +112,14 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
         </div>,
         value: 'rerun run script',
         run: () => runScript(file),
+      }
+
+      yield {
+        label: () => <div><i class="i-mdi-library"> </i> Libraries</div>,
+        value: 'show libraries',
+        run: () => {
+          alert('Currently, you can use\n\n* ob.readText() to read files\n* _.forEach() to use methods from Lodash\n\nMore features will be added in the future.')
+        },
       }
     },
     setupMonacoEditor({ file, editor }) {

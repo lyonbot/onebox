@@ -1,7 +1,7 @@
 import { DockviewComponent, DockviewPanelApi } from "dockview-core"
 import { batch, createEffect, mapArray, onCleanup } from "solid-js"
 import { SetStoreFunction, createStore } from "solid-js/store"
-import { watch } from "~/utils/solid"
+import { addListener, watch } from "~/utils/solid"
 import { uniqueId } from "lodash"
 import type * as monaco from 'monaco-editor'
 import { OneBoxPanelData } from "~/plugins"
@@ -34,13 +34,8 @@ export function createPanelsStore(/*root: () => OneBox*/) {
     if (!dragging) return
 
     const listener = () => update('isDraggingPanel', false)
-    window.addEventListener('dragend', listener,)
-    window.addEventListener('drop', listener,)
-
-    onCleanup(() => {
-      window.removeEventListener('dragend', listener,)
-      window.removeEventListener('drop', listener,)
-    })
+    addListener(window, 'dragend', listener,)
+    addListener(window, 'drop', listener,)
   })
 
   const api = {

@@ -1,9 +1,10 @@
 /* @refresh granular */
+import _ from 'lodash'
+import * as monaco from 'monaco-editor';
+import { basename, dirname, join, relative } from "path";
 import { Show, batch, createSignal, onMount } from "solid-js";
 import { ExportedProjectData, useOneBox } from "./store";
 import { Sidebar } from "./components/Sidebar";
-import * as monaco from 'monaco-editor';
-import _ from 'lodash'
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
 import { clsx, modKey, getSearchMatcher, Nil } from "yon-utils";
@@ -13,6 +14,7 @@ import { Buffer } from "buffer";
 import { PromptBox } from "./components/PromptBox";
 import { setupMonacoEnv } from "./monaco";
 import { installPlugin } from "./plugins";
+import { addListener } from './utils/solid';
 
 const global = window as any
 global.monaco = monaco
@@ -28,7 +30,7 @@ export default function App() {
   import('onebox-run-script').then(m => installPlugin(oneBox, m.default))
 
   onMount(() => {
-    window.addEventListener('keydown', ev => {
+    addListener(window, 'keydown', ev => {
       if (modKey(ev) === modKey.Mod && ev.code == 'KeyB') {
         ev.preventDefault()
         oneBox.ui.api.toggleSidebar()
@@ -93,7 +95,7 @@ export default function App() {
       }
     });
 
-    window.addEventListener('paste', ev => {
+    addListener(window, 'paste', ev => {
       handleIncomingDataTransferEvent(ev, ev.clipboardData)
     }, true)
   });
@@ -108,17 +110,17 @@ export default function App() {
       ref={div => {
         let dragBug = 0 // dnd api bug? after first hit, (dragenter and dragleave) fire alternately
 
-        div.addEventListener('dragenter', ev => {
+        addListener(div, 'dragenter', ev => {
           const hasFiles = !!ev.dataTransfer?.types.includes('Files')
           setIsAboutDropFiles(hasFiles)
           dragBug++;
         }, true)
 
-        div.addEventListener('dragleave', () => {
+        addListener(div, 'dragleave', () => {
           if (--dragBug === 0) setIsAboutDropFiles(false)
         }, true)
 
-        div.addEventListener('drop', (ev) => {
+        addListener(div, 'drop', (ev) => {
           dragBug = 0;
           setIsAboutDropFiles(false)
 
@@ -145,8 +147,9 @@ export default function App() {
     </div>
   );
 
-  async function importFilesFromEvent(dataTransfer: DataTransfer) {
+  async function importFilesFromEvent(dataTransfer: DataTransfer, relativeFileName?: string) {
     const items: [name: string, file: File][] = []
+    const baseDir = dirname(relativeFileName || '')
 
     for (const rawItem of dataTransfer.items) {
       for await (const iterator of scanFilesFromDataTransferItem(rawItem)) {
@@ -183,7 +186,7 @@ export default function App() {
     async function pushFile([name, file]: [string, File]) {
       const isTextFile = file.type.startsWith('text/') || file.type.includes('/json');
       return (oneBox.files.api.createFile({
-        filename: name,
+        filename: join(baseDir, name),
         content: isTextFile ? await file.text() : '',
         contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),
         lang: guessLangFromName(name),
@@ -195,7 +198,7 @@ export default function App() {
   function handleIncomingDataTransferEvent(ev: Event, dataTransfer: DataTransfer | Nil) {
     if (!dataTransfer) return
     if (dataTransfer.types.includes('text/x-ob-dnd-ignore')) return
-    if ((ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *')) return
+    if ((ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *') && !/monaco/.test((ev.target as any)?.className)) return
 
     const editor = oneBox.panels.state.activeMonacoEditor
     const file = oneBox.api.getFile(oneBox.api.getCurrentFilename())
@@ -206,7 +209,7 @@ export default function App() {
     if (dataTransfer.types.includes('Files')) {
       handlers.push(async () => {
         // dropped files
-        const imported = await importFilesFromEvent(dataTransfer);
+        const imported = await importFilesFromEvent(dataTransfer, file?.filename);
 
         // paste filePath into editor; or open first 3 files if no editor focused
         if (editor && file) {
@@ -214,14 +217,15 @@ export default function App() {
           let convert = (filename: string) => filename
           if (file.lang === 'markdown') {
             convert = filename => {
-              const url = `./${filename}`
-              const guessType = guessFileNameType(filename)
+              let url = relative(dirname(file.filename), filename)
+              if (!url.startsWith('.')) url = `./${url}`
 
-              if (guessType === 'image') return `![${filename}](${url})`
+              const guessType = guessFileNameType(filename)
+              if (guessType === 'image') return `![${basename(filename)}](${url})`
               if (guessType === 'video') return `<video src="${url}" controls></video>`
               if (guessType === 'audio') return `<audio src="${url}" controls></audio>`
 
-              return `[${filename}](${url})`
+              return `[${basename(filename)}](${url})`
             }
           }
 

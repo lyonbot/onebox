@@ -7,9 +7,9 @@ import { useOneBox } from "~/store"
 import { AdaptedPanelProps } from "~/panels/adaptor"
 import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
 
-import { watch } from "~/utils/solid"
+import { addListener, watch } from "~/utils/solid"
 import chiiTargetJS from "chii/public/target.js?url"
-import { clamp } from "lodash"
+import _, { clamp } from "lodash"
 import { obFactory } from "./runtime-api"
 
 export default function RunScriptPanel(props: AdaptedPanelProps) {
@@ -22,8 +22,10 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     const { document, window } = sandbox()!;
 
     // adding if(..) to make top-level `let` works in incremental mode
-    (window as any).console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
-      ; (window as any).ob = obApi()
+    const ctx = window as any;
+    ctx.console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
+    ctx.ob = obApi()
+    ctx._ = _
     document.write('<script>\nif (1) {\n' + file()?.content + '\n}</script>')
   }
 
@@ -106,8 +108,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
           waitDevToolReady.resolve()
         }
       }
-      window.addEventListener('message', messageForward)
-      runWithOwner(owner, () => onCleanup(() => window.removeEventListener('message', messageForward)))
+      runWithOwner(owner, () => addListener(window, 'message', messageForward))
 
       const script = doc.createElement('script')
       script.src = chiiTargetJS + '#/target.js' // chii relys on this filename

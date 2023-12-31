@@ -1,0 +1,14 @@
+{
+  "name": "@onebox/bundled-dts",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index",
+  "types": "./index.d.ts",
+  "scripts": {
+    "prepare": "node build.cjs"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.202"
+  }
+}

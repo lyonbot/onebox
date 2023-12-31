@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { basename } from "path"
+import { basename, dirname, join } from "path"
 import { Show, createMemo } from "solid-js"
 import { useOneBox } from "~/store"
 import { AdaptedPanelProps } from "~/panels/adaptor"
 import { VTextFileController } from "~/store/files"
 import { Fn, Nil } from "yon-utils"
 
-import { watch } from "~/utils/solid"
+import { addListener, watch } from "~/utils/solid"
 import { getModifiedMarkdownIt } from "./hyperMarkdownIt"
 
 export default function MarkdownPreviewPanel(props: AdaptedPanelProps) {
@@ -30,11 +30,12 @@ function chainBefore<T extends Fn>(fn: T | Nil, newFn: (...args: Parameters<T>) 
 function Markdown(props: { file: VTextFileController, panelId: string }) {
   const { file } = props; // assuming not change
   const oneBox = useOneBox()
+  const currentDir = createMemo(() => dirname(file.filename))
 
   function getFileFromURL(url: string | Nil) {
     if (!url) return
     const rel = decodeURI(url.replace(/^\.\//, '').replace(/[?#].*$/, ''))
-    const ctrl = oneBox.api.getFile(rel)
+    const ctrl = oneBox.api.getFile(join(currentDir(), rel))
 
     if (ctrl) return ctrl
     return
@@ -98,7 +99,7 @@ function Markdown(props: { file: VTextFileController, panelId: string }) {
           activeMonacoEditor.focus()
         }
 
-        articleEl.addEventListener('mouseenter', ev => goEditor(ev.target as HTMLElement), true)
+        addListener(articleEl, 'mouseenter', ev => goEditor(ev.target as HTMLElement), true)
       }}
     ></article>
   </div>

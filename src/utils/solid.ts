@@ -1,6 +1,6 @@
 import localForage from "localforage";
 import { debounce } from "lodash";
-import { createEffect, on, createMemo, mapArray, createSignal } from "solid-js";
+import { createEffect, on, createMemo, mapArray, createSignal, onCleanup } from "solid-js";
 
 /**
  * behave like Vue's watch function, with `equals` checking
@@ -66,4 +66,19 @@ export function createLifecycleArray<T extends object>() {
 
 export function nextTick(callback?: () => void) {
   return new Promise(resolve => setTimeout(resolve, 0)).then(callback)
+}
+
+/**
+ * a solid-js powered version of `addEventListener`, auto cleanup on unmount, or just call the returned disposer function
+ */
+export function addListener<T, K extends keyof HTMLElementEventMap>(target: T, type: K, listener: (this: T, ev: HTMLElementEventMap[K] & { currentTarget: T }) => any, options?: boolean | AddEventListenerOptions): () => void
+export function addListener(target: any, ...args: any[]): () => void
+export function addListener(target: any, ...args: any[]): () => void {
+  if (!target) return () => { }
+
+  let removed = 0
+  target.addEventListener(...args)
+  const remove = () => !removed++ && target.removeEventListener(...args)
+  onCleanup(remove)
+  return remove
 }

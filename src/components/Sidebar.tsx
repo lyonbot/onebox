@@ -93,11 +93,12 @@ export function Sidebar(props: { id: string }) {
               }
             }}
             onClick={(ev) => {
-              if (ev.metaKey || ev.ctrlKey || ev.shiftKey) return // TODO: make multiple selection
-              oneBox.api.openFile(file.filename)
+              oneBox.api.openFile(file.filename,
+                ev.shiftKey ? 'below' : (ev.metaKey || ev.ctrlKey) ? 'right' : false
+              )
             }}
-            onDblClick={(ev) => {
-              oneBox.api.openFile(file.filename, ev.shiftKey ? 'below' : (ev.metaKey || ev.ctrlKey) ? 'right' : 'within')
+            onDblClick={() => {
+              oneBox.api.openFile(file.filename, 'within')
             }}
             onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
               <div class='ob-status-actionHint'>

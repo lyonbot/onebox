@@ -5,7 +5,7 @@ import { batch, createEffect, createRoot, createSignal, getOwner, mapArray, untr
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
-import { watch } from '~/utils/solid'
+import { addListener, watch } from '~/utils/solid'
 import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
 import { downloadFile, isValidFilename } from '~/utils/files'
 import { Lang, LangDescriptions } from '~/utils/lang'
@@ -57,9 +57,9 @@ function createOneBoxStore() {
 
     // update cache when window lost focus, or mouse leave the whole window
     const flushSave = () => api.saveLastProject.flush()
-    document.body.addEventListener('focusout', flushSave)
-    document.documentElement.addEventListener('mouseleave', flushSave)
-    document.addEventListener('visibilitychange', flushSave)
+    addListener(document.body, 'focusout', flushSave)
+    addListener(document.documentElement, 'mouseleave', flushSave)
+    addListener(document, 'visibilitychange', flushSave)
 
     // watch dockview's modifications
     dockview.onDidLayoutChange(api.saveLastProject)

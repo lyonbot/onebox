@@ -4,6 +4,7 @@
   "type": "module",
   "main": "src/index",
   "dependencies": {
+    "@onebox/bundled-dts": "workspace:^",
     "chii": "^1.10.0",
     "incremental-dom": "^0.7.0"
   }
