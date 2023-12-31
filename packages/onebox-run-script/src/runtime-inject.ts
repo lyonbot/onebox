@@ -8,10 +8,9 @@ import CryptoJS from 'crypto-js/crypto-js'
 import jsyaml from 'js-yaml'
 import type { OBAPI } from './types/onebox-runtime';
 
-export type SandboxWindow = typeof ctx;
+export type SandboxWindow = typeof ctx & { ChiiDevtoolsIframe: HTMLIFrameElement | null };
 
 const ctx = {
-  ChiiDevtoolsIframe: null as any, // chii
   ob: null as any as OBAPI,
   _: lodash,
   Buffer,
