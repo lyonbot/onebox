@@ -2,6 +2,7 @@
 
 /* @refresh granular */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import * as monaco from 'monaco-editor'
 import { Show, createMemo, createSignal, getOwner, on, onCleanup, runWithOwner } from "solid-js"
 import { useOneBox } from "~/store"
 import { AdaptedPanelProps } from "~/panels/adaptor"
@@ -9,16 +10,39 @@ import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
 
 import { addListener, watch } from "~/utils/solid"
 import chiiTargetJS from "chii/public/target.js?url"
-import _, { clamp } from "lodash"
+import runtimeInjectJS from "./runtime-inject?url"
+import _, { clamp, has } from "lodash"
 import { obFactory } from "./runtime-api"
+import { Lang } from "~/utils/lang"
+import { VTextFileController } from '~/store/files'
+import { simpleAMD } from './simpleAMD'
 
 export default function RunScriptPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
   const file = createMemo(() => oneBox.api.getFile(props.params.filename))
 
+
+  async function transpile(file: VTextFileController): Promise<{ code: string, isAMD?: boolean }> {
+    let { content } = file
+
+    // transpile TS, ESM, JSX
+    if (file.lang === Lang.TYPESCRIPT || /^import\s/m.test(content) || (file.lang === Lang.JAVASCRIPT && /<\w+/.test(content))) {
+      const tsWorkerGetter = await monaco.languages.typescript[file.lang === Lang.TYPESCRIPT ? 'getTypeScriptWorker' : 'getJavaScriptWorker']()
+      const ts = await tsWorkerGetter()
+      const out = await ts.getEmitOutput('file:///' + file.filename)
+
+      content = out.outputFiles[0].text
+    }
+
+    const isAMD = /^define\(/m.test(content)
+    return { code: content, isAMD }
+  }
+
+
+
   const [sandbox, setSandbox] = createSignal(null as null | { iframe: HTMLIFrameElement, document: Document, window: Window })
   const obApi = createMemo(() => file() && obFactory()(file()!))
-  const runScriptInSandbox = () => {
+  const runScriptInSandbox = async () => {
     const { document, window } = sandbox()!;
 
     // adding if(..) to make top-level `let` works in incremental mode
@@ -26,7 +50,39 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     ctx.console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
     ctx.ob = obApi()
     ctx._ = _
-    document.write('<script>\nif (1) {\n' + file()?.content + '\n}</script>')
+
+    try {
+      const out = await transpile(file()!)
+      if (!out.isAMD) {
+        document.write('<script>\nif (1) {\n' + out.code + '\n}</script>')
+      } else {
+        // start a new AMD session
+        const amdModuleManager = simpleAMD(async filename => {
+          if (filename.startsWith('./')) filename = filename.slice(2)
+
+          if (!has(oneBox.files.controllers(), filename)) {
+            // amd omitted .extname. find name for it
+            const candidates = Object.keys(oneBox.files.controllers()).filter(name => name.startsWith(filename)).sort((a, b) => a.length - b.length)
+            const name = candidates.find(name => name.endsWith('.js')) || candidates[0]
+            if (!name) throw new Error(`AMD module not found: ${filename}`)
+
+            filename = name
+          }
+
+          const file = oneBox.api.getFile(filename)!
+          const out = await transpile(file)
+
+          let code = out.code
+          if (!out.isAMD) code = 'define([], function() {\n' + code + '\n})'
+
+          return { runner: new ctx.Function('define', code) }
+        })
+        amdModuleManager.defineModule('lodash', _)
+        await amdModuleManager.fetchModule(file()!.filename)
+      }
+    } catch (err) {
+      ctx.console.error('[OneBox] Failed to execute', err)
+    }
   }
 
   const runScriptConf = createMemo(() => props.params.runScript!)
@@ -80,7 +136,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
         try {
           el.contentWindow!.document.createElement
           doc = el.contentWindow!.document
-          doc.write('&nbsp;')
+          doc.write('onebox')
           doc.title = 'OneBox Sandbox'
         } catch (e) {
           await delay(100)
@@ -110,11 +166,18 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
       }
       runWithOwner(owner, () => addListener(window, 'message', messageForward))
 
+      doc.body.textContent = ""
+
       const script = doc.createElement('script')
       script.src = chiiTargetJS + '#/target.js' // chii relys on this filename
       script.setAttribute('cdn', 'https://cdn.jsdelivr.net/npm/chii/public')
       script.setAttribute('embedded', 'true')
       doc.body.appendChild(script)
+
+      const runtimeScript = doc.createElement('script')
+      runtimeScript.src = runtimeInjectJS + '#/runtime-inject.js'
+      runtimeScript.setAttribute('type', 'module')
+      doc.body.appendChild(runtimeScript)
 
       // ------------------------------
       await waitDevToolReady

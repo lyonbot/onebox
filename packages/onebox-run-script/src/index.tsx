@@ -25,15 +25,18 @@ const langs = new Set([
   Lang.TYPESCRIPT,
 ])
 
+const panelId = 'onebox-run-script:panel'
+
 const oneBoxRunScript: OneBoxPlugin = oneBox => {
   function runScript(file: VTextFileController) {
     if (!langs.has(file.lang)) return
 
-    const existingPanelId = getExistingRunnerPanelId(file)
-    if (existingPanelId) {
-      oneBox.panels.api.updatePanel(existingPanelId)('runScript', 'randomKey', 'S' + Math.random())
+    const panelExists = getExistingRunnerPanelId(file)
+    if (panelExists) {
+      oneBox.panels.api.updatePanel(panelId)('runScript', 'randomKey', 'S' + Math.random())
     } else {
       oneBox.panels.api.openPanel({
+        id: panelId,
         panelType: 'onebox-run-script',
         filename: file.filename,
         runScript: {
@@ -156,7 +159,13 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
   })
 
   function getExistingRunnerPanelId(file: VTextFileController) {
-    return oneBox.panels.state.panels.find(p => p.panelType === 'onebox-run-script' && p.filename === file.filename)?.id
+    const panel = oneBox.panels.state.panels.find(p => p.id === panelId)
+    if (!panel) return null
+
+    if (panel.filename !== file.filename) {
+      console.warn('onebox-run-script: panel filename mismatch', panel.filename, file.filename)
+    }
+    return panel.id
   }
 }
 

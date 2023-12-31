@@ -29,9 +29,12 @@ export function setupMonacoTsLibs() {
     allowNonTsExtensions: true,
     resolveJsonModule: true,
     moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-    module: monaco.languages.typescript.ModuleKind.ESNext,
+    module: monaco.languages.typescript.ModuleKind.AMD,
     typeRoots: ['node_modules/@types'],
     allowSyntheticDefaultImports: true,
+    allowJs: true,
+    jsx: monaco.languages.typescript.JsxEmit.React,
+    outDir: '__out__',
   };
   monaco.languages.typescript.javascriptDefaults.setCompilerOptions(compilerOptions);
   monaco.languages.typescript.typescriptDefaults.setCompilerOptions(compilerOptions);

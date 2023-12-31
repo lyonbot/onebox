@@ -13,9 +13,9 @@ Once code updated, press `F5` again to re-run. By default we reload the whole if
 To interact with OneBox API, you can use the `ob` object, which is exposed to the global scope of iframe.
 
 ```js
-var data = ob.readJSON('./data.json');
+var data = ob.readJSON("./data.json");
 data.processed = true;
-ob.writeFile('./data2.json', data);
+ob.writeFile("./data2.json", data);
 ```
 
 ## Features
@@ -27,10 +27,28 @@ ob.writeFile('./data2.json', data);
 - [x] Exposed `ob` object to access OneBox API and Files
 - [x] See network requests
 - [x] ~~Breakpoints~~ (please open real DevTool to make `debugger` works)
-- [ ] Transpile JSX / TypeScript in browser ⚛️
-- [ ] Support `import` / `export` syntax
+- [x] Transpile JSX / TypeScript in browser \*
+- [x] Support `import` / `export` syntax
 - [ ] Import third-party libraries like `lodash`, `axios` etc.
 - [ ] Asserting and testing 🚦
+
+> NOTE: the JSX is not React, and each JSX element is a `HTMLElement` instance, not a React component.
+>
+> Maybe one day we can support React, but for now, you can use JSX to create DOM elements.
+>
+> ```jsx
+> function sayHello() {
+>   alert("Hello");
+> }
+>
+> document.body.appendChild(
+>   <div class="foobar">
+>     <p>Yes everything is a HTMLElement</p>
+>     <button onclick={sayHello}> like this </button>
+>     <style>{` body {color: red} `}</style>
+>   </div>
+> );
+> ```
 
 ## Tech Stack
 
@@ -42,7 +60,6 @@ ob.writeFile('./data2.json', data);
 
   - the `target.js` is served from local, and resources are from `cdn` <https://cdn.jsdelivr.net/npm/chii/public>
 
-- [@babel/standalone](https://babeljs.io/docs/babel-standalone) - the babel in browser
+- typescript worker of monaco
 
-  - transform JSX, TypeScript syntax
-  - analyze ESM dependencies and transform its syntax to AMD.
+  - transpile TypeScript in browser
