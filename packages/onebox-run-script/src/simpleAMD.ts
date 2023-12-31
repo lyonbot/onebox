@@ -1,11 +1,15 @@
 import { dirname, join } from "path"
 import { Fn } from "yon-utils"
 
+export type SimpleAMDLoadFunction = (absolutePath: string) => Promise<{
+  runner(define: Fn): void
+}>
+
 export function simpleAMD(
   /**
    * @param absolutePath absolute path of the module. the extname `.js` is omitted
    */
-  loader: (absolutePath: string) => Promise<{ runner(define: Fn): void }>,
+  loader: SimpleAMDLoadFunction,
 ) {
   type Module = {
     exports: any
@@ -63,11 +67,14 @@ export function simpleAMD(
   }
 
   return {
-    defineModule: (absolutePath: string, exports: any) => {
+    preDefineModule: (absolutePath: string, exports: any) => {
       const path = fixName(absolutePath)
       // if (mods.has(path)) throw new Error(`Module ${path} already defined`)
       mods.set(path, { exports, loading: false })
     },
     fetchModule,
+    reset() {
+      mods.clear()
+    },
   }
 }

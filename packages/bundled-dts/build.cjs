@@ -2,14 +2,16 @@
 /* eslint-env node */
 const { mkdirSync, writeFileSync, readFileSync } = require('fs')
 const { join } = require('path')
-
 const outFils = {}
 
 mkdirSync('./dist', { recursive: true })
 makeLodash()
+makeBuffer()
+makeCryptoJS()
+makeJsYaml()
 
 for (const [name, content] of Object.entries(outFils)) {
-  writeFileSync(join('./dist', name+'.d.ts'), content)
+  writeFileSync(join('./dist', name + '.d.ts'), content)
 }
 writeFileSync('./dist/index.js', "export default /** @type {Record<string,string>} */(" + JSON.stringify(outFils, null, 2) + ")")
 
@@ -30,4 +32,26 @@ function makeLodash() {
   out.push('export = _')
 
   outFils['lodash'] = out.join('\n\n')
+}
+
+function makeBuffer() {
+  let content = readFileSync(require.resolve('@types/node/buffer.d.ts'), 'utf-8')
+
+  const lead = 'declare module "buffer" {'
+  const tail = 'declare module "node:buffer"'
+  content = content.slice(content.indexOf(lead) + lead.length, content.lastIndexOf('}', content.lastIndexOf(tail)))
+  content = content.replace(/^.+BinaryLike.+$/m, 'type BinaryLike = string | ArrayBufferView;')
+  content = content.replace(/^.+WebReadableStream.+$/m, 'type WebReadableStream = ReadableStream;')
+
+  outFils['buffer'] = content
+}
+
+function makeCryptoJS() {
+  const content = readFileSync(require.resolve('@types/crypto-js/index.d.ts'), 'utf-8')
+  outFils['crypto-js'] = content
+}
+
+function makeJsYaml() {
+  const content = readFileSync('node_modules/@types/js-yaml/index.d.ts', 'utf-8')
+  outFils['js-yaml'] = content
 }

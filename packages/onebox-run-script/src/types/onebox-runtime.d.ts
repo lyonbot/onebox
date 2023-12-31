@@ -15,7 +15,14 @@ export interface OBAPI {
    * @param path - The relative path of the file to read. eg. `"./foobar.json"`
    * @returns The content of the file as a JSON object.
    */
-  readJSON<T=any>(path: string): T;
+  readJSON<T = any>(path: string): T;
+
+  /**
+   * Reads the content of a file as YAML.
+   * @param path - The relative path of the file to read. eg. `"./foobar.yaml"`
+   * @returns The content of the file as a YAML object. (parsed by js-yaml)
+   */
+  readYAML<T = any>(path: string): T;
 
   /**
    * Writes content to a file. If the file does not exist, it will be created.

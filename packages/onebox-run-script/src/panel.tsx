@@ -2,20 +2,20 @@
 
 /* @refresh granular */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { clamp, has } from "lodash"
 import * as monaco from 'monaco-editor'
+import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
 import { Show, createMemo, createSignal, getOwner, on, onCleanup, runWithOwner } from "solid-js"
+import { Lang } from "~/utils/lang"
 import { useOneBox } from "~/store"
 import { AdaptedPanelProps } from "~/panels/adaptor"
-import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
-
 import { addListener, watch } from "~/utils/solid"
+
 import chiiTargetJS from "chii/public/target.js?url"
 import runtimeInjectJS from "./runtime-inject?url"
-import _, { clamp, has } from "lodash"
 import { obFactory } from "./runtime-api"
-import { Lang } from "~/utils/lang"
-import { VTextFileController } from '~/store/files'
-import { simpleAMD } from './simpleAMD'
+import type { VTextFileController } from '~/store/files'
+import type { SandboxWindow } from './runtime-inject'
 
 export default function RunScriptPanel(props: AdaptedPanelProps) {
   const oneBox = useOneBox()
@@ -40,48 +40,31 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
 
 
-  const [sandbox, setSandbox] = createSignal(null as null | { iframe: HTMLIFrameElement, document: Document, window: Window })
+  const [sandbox, setSandbox] = createSignal(null as null | {
+    iframe: HTMLIFrameElement,
+    document: Document,
+    window: Window & typeof globalThis & SandboxWindow,
+  })
   const obApi = createMemo(() => file() && obFactory()(file()!))
   const runScriptInSandbox = async () => {
     const { document, window } = sandbox()!;
 
     // adding if(..) to make top-level `let` works in incremental mode
-    const ctx = window as any;
-    ctx.console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
-    ctx.ob = obApi()
-    ctx._ = _
+    window.console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
+    window.ob = obApi()!
 
     try {
+      window._oneBoxRuntime.resetAMD()
       const out = await transpile(file()!)
       if (!out.isAMD) {
+        // just run in window
         document.write('<script>\nif (1) {\n' + out.code + '\n}</script>')
       } else {
         // start a new AMD session
-        const amdModuleManager = simpleAMD(async filename => {
-          if (filename.startsWith('./')) filename = filename.slice(2)
-
-          if (!has(oneBox.files.controllers(), filename)) {
-            // amd omitted .extname. find name for it
-            const candidates = Object.keys(oneBox.files.controllers()).filter(name => name.startsWith(filename)).sort((a, b) => a.length - b.length)
-            const name = candidates.find(name => name.endsWith('.js')) || candidates[0]
-            if (!name) throw new Error(`AMD module not found: ${filename}`)
-
-            filename = name
-          }
-
-          const file = oneBox.api.getFile(filename)!
-          const out = await transpile(file)
-
-          let code = out.code
-          if (!out.isAMD) code = 'define([], function() {\n' + code + '\n})'
-
-          return { runner: new ctx.Function('define', code) }
-        })
-        amdModuleManager.defineModule('lodash', _)
-        await amdModuleManager.fetchModule(file()!.filename)
+        window._oneBoxRuntime.amd.fetchModule(file()!.filename)
       }
     } catch (err) {
-      ctx.console.error('[OneBox] Failed to execute', err)
+      window.console.error('[OneBox] Failed to execute', err)
     }
   }
 
@@ -138,6 +121,14 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
           doc = el.contentWindow!.document
           doc.write('onebox')
           doc.title = 'OneBox Sandbox'
+          doc.location.hash = '#sandbox'
+
+          const preload = doc.createElement('link')
+          preload.rel = 'preload'
+          preload.as = 'script'
+          preload.href = runtimeInjectJS
+          preload.crossOrigin = "anonymous"
+          doc.head.appendChild(preload)
         } catch (e) {
           await delay(100)
         }
@@ -148,8 +139,8 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
         return
       }
 
-      const win = doc.defaultView!;
-      (win as any).ChiiDevtoolsIframe = devtoolIFrame
+      const win = doc.defaultView as unknown as Window & typeof globalThis & SandboxWindow;
+      win.ChiiDevtoolsIframe = devtoolIFrame
 
       const waitDevToolReady = makePromise<void>()
 
@@ -175,7 +166,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
       doc.body.appendChild(script)
 
       const runtimeScript = doc.createElement('script')
-      runtimeScript.src = runtimeInjectJS + '#/runtime-inject.js'
+      runtimeScript.src = runtimeInjectJS
       runtimeScript.setAttribute('type', 'module')
       doc.body.appendChild(runtimeScript)
 
@@ -185,6 +176,36 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
       devtoolIFrame!.contentWindow!.addEventListener('focus', activePanel)
       devtoolIFrame!.contentWindow!.addEventListener('pointerdown', () => setJustPointerDownAtDevTool(true))
       devtoolIFrame!.contentWindow!.addEventListener('pointerup', () => void setTimeout(() => setJustPointerDownAtDevTool(false), 100))
+
+      // ------------------------------
+      // wait for ./runtime-api flag set, and setup AMD
+      {
+        const waitEnd = Date.now() + 1000;
+        while (!win._oneBoxRuntime && Date.now() < waitEnd) await delay(50);
+        if (!win._oneBoxRuntime) throw new Error('OneBox runtime not ready');
+
+        win._oneBoxRuntime.fetchModuleScript =
+          async (filename: string) => {
+            if (filename.startsWith('./')) filename = filename.slice(2)
+
+            if (!has(oneBox.files.controllers(), filename)) {
+              // amd omitted .extname. find name for it
+              const candidates = Object.keys(oneBox.files.controllers()).filter(name => name.startsWith(filename)).sort((a, b) => a.length - b.length)
+              const name = candidates.find(name => name.endsWith('.js')) || candidates[0]
+              if (!name) throw new Error(`AMD module not found: ${filename}`)
+
+              filename = name
+            }
+
+            const file = oneBox.api.getFile(filename)!
+            const out = await transpile(file)
+
+            let code = out.code
+            if (!out.isAMD) code = 'define([], function() {\n' + code + '\n})'
+
+            return code
+          }
+      }
 
       setSandbox({ iframe: el, document: doc, window: win })
     }

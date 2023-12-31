@@ -5,7 +5,10 @@
   "main": "src/index",
   "dependencies": {
     "@onebox/bundled-dts": "workspace:^",
+    "@types/js-yaml": "^4.0.9",
     "chii": "^1.10.0",
-    "incremental-dom": "^0.7.0"
+    "crypto-js": "^4.2.0",
+    "incremental-dom": "^0.7.0",
+    "js-yaml": "^4.1.0"
   }
 }

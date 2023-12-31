@@ -62,7 +62,7 @@ function createOneBoxStore() {
     addListener(document, 'visibilitychange', flushSave)
 
     // watch dockview's modifications
-    dockview.onDidLayoutChange(api.saveLastProject)
+    dockview.onDidLayoutChange(debounce(api.saveLastProject, 100, { leading: false, trailing: true }))
 
     // watch file's modifications
     createEffect(mapArray(() => files.state.files, file => {

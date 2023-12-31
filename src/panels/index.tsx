@@ -1,10 +1,10 @@
-import { DockviewComponent, IWatermarkRenderer } from "dockview-core"
+import { DockviewComponent, IWatermarkRenderer, WatermarkRendererInitParameters } from "dockview-core"
 import { useOneBox } from "~/store"
 import { getDockviewAdaptor, castConstructor, simpleRendererAdaptor } from "./adaptor"
 import { getOwner } from "solid-js"
 import { noop } from "lodash"
 
-function Watermark() {
+function Watermark({ params }: { params: WatermarkRendererInitParameters }) {
   const oneBox = useOneBox()
 
   return <div
@@ -33,6 +33,10 @@ function Watermark() {
           <i class="i-mdi-plus"></i>
           New File
         </button>
+        {params.group && <button class="ob-watermark-bigButton" onClick={() => params.containerApi.removeGroup(params.group!)}>
+          <i class="i-mdi-close"></i>
+          Close this Group
+        </button>}
       </p>
 
       <div class="op-60 mt-16">
@@ -87,7 +91,7 @@ export function OneBoxDockview() {
         </button>
       ), owner),
       watermarkComponent: castConstructor((): IWatermarkRenderer => ({
-        ...simpleRendererAdaptor(() => <Watermark />, owner),
+        ...simpleRendererAdaptor((props) => <Watermark {...props} />, owner),
         updateParentGroup: noop,
       })),
       floatingGroupBounds: 'boundedWithinViewport',

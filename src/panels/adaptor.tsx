@@ -175,28 +175,28 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
   return { DockviewContentAdaptor, DockviewTabAdaptor }
 }
 
-export function simpleRendererAdaptor(render: () => JSX.Element, owner = getOwner()) {
+export function simpleRendererAdaptor(render: (props: { params: any }) => JSX.Element, owner = getOwner()) {
   const element = document.createElement('div');
-  const [active, setActive] = createSignal(false);
+  const [params, setParams] = createSignal(null as any);
 
   element.style.display = 'contents'
 
   runWithOwner(owner, () => {
     createEffect(() => {
-      if (!active()) return null
+      if (!params()) return null
       return <Portal mount={element} ref={el => {
         el.style.display = 'contents'
-      }}>{render()}</Portal>
+      }}>{render({ params: params() })}</Portal>
     })
   })
 
   return {
     element,
-    init() {
-      setActive(true)
+    init(params: any) {
+      setParams(params)
     },
     dispose() {
-      setActive(false)
+      setParams(null)
     },
   }
 }

@@ -1,7 +1,7 @@
 import { forEach } from 'lodash';
 import * as monaco from 'monaco-editor';
 import bundledDts from '@onebox/bundled-dts';
-import typesFileContent from './types?raw';
+import typesFileContent from './types/onebox-runtime.d.ts?raw';
 
 export function setupMonacoTsLibs() {
   const obAPIDts = [

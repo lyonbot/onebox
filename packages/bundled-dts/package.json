@@ -9,6 +9,11 @@
     "prepare": "node build.cjs"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.202"
+    "@types/crypto-js": "^4.2.1",
+    "@types/lodash": "^4.14.202",
+    "@types/node": "^18.19.3"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9"
   }
 }

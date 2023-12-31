@@ -1,4 +1,5 @@
 import JSON5 from 'json5'
+import jsyaml from 'js-yaml'
 import * as monaco from 'monaco-editor'
 import { dirname, join } from 'path'
 import { onCleanup } from 'solid-js'
@@ -19,6 +20,23 @@ declare module "~/plugins" {
     }
   }
 }
+
+const libraryHelpMessage = `
+== OneBox API ==
+
+* ob.readText("./xxx")
+* ob.readJSON("./xxx")
+* ob.writeFile("./xxx", content)
+
+== Third-party libraries ==
+
+* _.forEach() to use methods from Lodash
+* Buffer
+* CryptoJS
+* jsyaml.load & jsyaml.dump (using js-yaml)
+
+And you can use ES Module import / export to composite! More features will be added in the future.
+`.trim()
 
 const langs = new Set([
   Lang.JAVASCRIPT,
@@ -62,6 +80,10 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       readJSON(path) {
         path = norm(path)
         return JSON5.parse(this.readText(path))
+      },
+      readYAML(path) {
+        path = norm(path)
+        return jsyaml.load(this.readText(path)) as any
       },
       writeFile: (fn, content) => {
         fn = norm(fn)
@@ -124,7 +146,7 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
           label: () => <div><i class="i-mdi-library"> </i> Libraries</div>,
           value: 'show libraries',
           run: () => {
-            alert('Currently, you can use\n\n* ob.readText() to read files\n* _.forEach() to use methods from Lodash\n\nAnd you can use ES Module import / export to composite! More features will be added in the future.')
+            alert(libraryHelpMessage)
           },
         }
     },
