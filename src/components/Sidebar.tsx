@@ -94,7 +94,9 @@ export function Sidebar(props: { id: string }) {
             }}
             onClick={(ev) => {
               oneBox.api.openFile(file.filename,
-                ev.shiftKey ? 'below' : (ev.metaKey || ev.ctrlKey) ? 'right' : false
+                (ev.shiftKey || ev.altKey) ? 'below' :
+                  (ev.metaKey || ev.ctrlKey) ? 'right' :
+                    false
               )
             }}
             onDblClick={() => {
