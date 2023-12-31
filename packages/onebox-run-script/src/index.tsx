@@ -29,12 +29,12 @@ const panelId = 'onebox-run-script:panel'
 
 const oneBoxRunScript: OneBoxPlugin = oneBox => {
   function runScript(file: VTextFileController) {
-    if (!langs.has(file.lang)) return
-
     const panelExists = getExistingRunnerPanelId(file)
+
     if (panelExists) {
       oneBox.panels.api.updatePanel(panelId)('runScript', 'randomKey', 'S' + Math.random())
     } else {
+      if (!langs.has(file.lang)) return
       oneBox.panels.api.openPanel({
         id: panelId,
         panelType: 'onebox-run-script',
@@ -96,8 +96,9 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       'onebox-run-script': () => import('./panel'),
     },
     async *getActions(file) {
-      if (!langs.has(file.lang)) return
       const alreadyRan = !!getExistingRunnerPanelId(file)
+      const langMatch = langs.has(file.lang)
+      if (!alreadyRan && !langMatch) return
 
       yield {
         label: () => <div><i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : 'Run'} Script</div>,
@@ -106,8 +107,9 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       }
     },
     *getQuickActions(file) {
-      if (!langs.has(file.lang)) return
       const alreadyRan = !!getExistingRunnerPanelId(file)
+      const langMatch = langs.has(file.lang)
+      if (!alreadyRan && !langMatch) return
 
       yield {
         label: () => <div onMouseEnter={oneBox.ui.api.getActionHintEvFor(<div class='ob-status-actionHint'><kbd>F5</kbd>Run</div>)}>
@@ -117,13 +119,14 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
         run: () => runScript(file),
       }
 
-      yield {
-        label: () => <div><i class="i-mdi-library"> </i> Libraries</div>,
-        value: 'show libraries',
-        run: () => {
-          alert('Currently, you can use\n\n* ob.readText() to read files\n* _.forEach() to use methods from Lodash\n\nMore features will be added in the future.')
-        },
-      }
+      if (langMatch)
+        yield {
+          label: () => <div><i class="i-mdi-library"> </i> Libraries</div>,
+          value: 'show libraries',
+          run: () => {
+            alert('Currently, you can use\n\n* ob.readText() to read files\n* _.forEach() to use methods from Lodash\n\nAnd you can use ES Module import / export to composite! More features will be added in the future.')
+          },
+        }
     },
     setupMonacoEditor({ file, editor }) {
       // when re-run code, the devtool reinit and take focus away. we must focus back to editor
@@ -138,11 +141,14 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       })
 
       // add action to context menu
-      watch(() => langs.has(file.lang) && (getExistingRunnerPanelId(file) || '<no run yet>'), has => {
-        if (!has) return
+      watch(() => (
+        (langs.has(file.lang) ? 1 : 0) +
+        (getExistingRunnerPanelId(file) ? 2 : 0)
+      ), flag => {
+        if (flag === 0) return // mismatch language, and no panel running
 
         const id = 'oneBox:runScript'
-        const alreadyRan = has !== '<no run yet>'
+        const alreadyRan = !!(flag & 2)
         const action = editor.addAction({
           id,
           label: `OneBox: ${alreadyRan ? 'Re-run' : 'Run'} Script`,
