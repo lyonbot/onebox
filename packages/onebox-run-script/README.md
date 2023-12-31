@@ -16,6 +16,8 @@ To interact with OneBox API, you can use the `ob` object, which is exposed to th
 var data = ob.readJSON("./data.json");
 data.processed = true;
 ob.writeFile("./data2.json", data);
+
+print(data)  // print = console.log
 ```
 
 ## Features

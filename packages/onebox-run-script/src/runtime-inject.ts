@@ -18,6 +18,7 @@ const ctx = {
   CryptoJS,
   jsyaml,
   yaml: jsyaml,
+  print: console.log.bind(console),
   React: {
     createElement: elt,
   },

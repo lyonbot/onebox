@@ -27,6 +27,7 @@ const libraryHelpMessage = `
 * ob.readText("./xxx")
 * ob.readJSON("./xxx")
 * ob.writeFile("./xxx", content)
+* print(...) = console.log()
 
 == Third-party libraries ==
 

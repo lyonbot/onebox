@@ -8,8 +8,11 @@ export function setupMonacoTsLibs() {
     'declare module "onebox-run-script-runtime" {',
     typesFileContent,
     '}',
+    '',
     'declare const ob: import("onebox-run-script-runtime").OBAPI',
     'declare const _: typeof import("lodash")',
+    '/** same as `console.log()` */',
+    'declare function print(...args: any[]): void',
   ].join('\n');
   forEach(bundledDts, (content, packageId) => {
     const filename = 'file:///node_modules/@types/' + packageId + '/index.d.ts';
