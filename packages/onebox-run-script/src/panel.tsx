@@ -159,16 +159,18 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
       doc.body.textContent = ""
 
+      const runtimeScript = doc.createElement('script')
+      runtimeScript.src = runtimeInjectJS
+      runtimeScript.type = 'module'
+      runtimeScript.async = true
+      doc.body.appendChild(runtimeScript)
+
       const script = doc.createElement('script')
       script.src = chiiTargetJS + '#/target.js' // chii relys on this filename
+      script.async = true
       script.setAttribute('cdn', 'https://cdn.jsdelivr.net/npm/chii/public')
       script.setAttribute('embedded', 'true')
       doc.body.appendChild(script)
-
-      const runtimeScript = doc.createElement('script')
-      runtimeScript.src = runtimeInjectJS
-      runtimeScript.setAttribute('type', 'module')
-      doc.body.appendChild(runtimeScript)
 
       // ------------------------------
       await waitDevToolReady
