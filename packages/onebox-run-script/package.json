@@ -10,5 +10,13 @@
     "crypto-js": "^4.2.0",
     "incremental-dom": "^0.7.0",
     "js-yaml": "^4.1.0"
+  },
+  "scripts": {
+    "prepare": "npm run esbuild -- --minify",
+    "dev": "npm run esbuild -- --watch",
+    "esbuild": "esbuild --bundle src/runtime-inject.ts --outfile=dist/runtime-inject.js --alias:path=path-browserify"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.10"
   }
 }

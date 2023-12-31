@@ -12,7 +12,7 @@ import { AdaptedPanelProps } from "~/panels/adaptor"
 import { addListener, watch } from "~/utils/solid"
 
 import chiiTargetJS from "chii/public/target.js?url"
-import runtimeInjectJS from "./runtime-inject-js.js?url"
+import runtimeInjectJS from "../dist/runtime-inject.js?url"
 import { obFactory } from "./runtime-api"
 import type { VTextFileController } from '~/store/files'
 import type { SandboxWindow } from './runtime-inject'
