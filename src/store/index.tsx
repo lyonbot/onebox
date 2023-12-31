@@ -1,7 +1,7 @@
 import JSZip from 'jszip'
 import localForage from 'localforage'
 import { extname } from 'path'
-import { batch, createRoot, createSignal, getOwner } from 'solid-js'
+import { batch, createEffect, createRoot, createSignal, getOwner, mapArray, untrack } from 'solid-js'
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
@@ -24,7 +24,16 @@ export interface ExportedProjectData {
     contentBinary?: string | false // base64
     lang: string
   }[]
+  showSidebar?: boolean
   dockview?: any // layout json
+}
+
+const emptyProjectData: Required<ExportedProjectData> = {
+  is: 'oneBox:projectData',
+  title: 'OneBox Project',
+  files: [],
+  showSidebar: true,
+  dockview: null,
 }
 
 const LS_LAST_PROJECT_DATA = 'oneBox:lastProjectData'
@@ -37,6 +46,40 @@ function createOneBoxStore() {
   const files = createFilesStore(getRoot)
   const panels = createPanelsStore(/* getRoot */)
   const ui = createUIStore()
+
+  // some logic about auto-save current project
+  let isImporting = false;
+  const autoSaveDebounceTime = 2000
+  const unsetIsImporting = debounce(() => isImporting = false, autoSaveDebounceTime + 100, { leading: false, trailing: true })
+  const setIsImporting = () => { isImporting = true; unsetIsImporting(); api.saveLastProject.cancel() }
+  watch(() => panels.state.dockview, dockview => {
+    if (!dockview) return
+
+    // update cache when window lost focus, or mouse leave the whole window
+    const flushSave = () => api.saveLastProject.flush()
+    document.body.addEventListener('focusout', flushSave)
+    document.documentElement.addEventListener('mouseleave', flushSave)
+    document.addEventListener('visibilitychange', flushSave)
+
+    // watch dockview's modifications
+    dockview.onDidLayoutChange(api.saveLastProject)
+
+    // watch file's modifications
+    createEffect(mapArray(() => files.state.files, file => {
+      createEffect(() => {
+        file.content;
+        file.contentBinary;
+        file.lang;
+        file.filename;
+
+        // update when one of them updated
+        untrack(() => api.saveLastProject())
+      })
+    }))
+
+    // load last project
+    setTimeout(api.loadLastProject, 20) // avoid floating group losing position (due to dockview's size not ready)
+  })
 
   const api = {
     getCurrentFilename() {
@@ -67,6 +110,7 @@ function createOneBoxStore() {
       panels.state.dockview.clear()
       panels.update({ panels: [], activePanelId: '' })
       files.update({ files: [] })
+      ui.update({ showSidebar: true })
       setTitle('OneBox Project')
     },
     exportProject() {
@@ -77,33 +121,44 @@ function createOneBoxStore() {
           ...f,
           contentBinary: f.contentBinary && Buffer.from(f.contentBinary).toString('base64'),
         })),
+        showSidebar: ui.state.showSidebar,
         dockview: cloneDeepWith(panels.state.dockview?.toJSON(), (value) => {
           if (typeof value === 'function') return null
         }),
       }
       return data
     },
-    importProject(data: ExportedProjectData) {
-      if (!data || data.is !== 'oneBox:projectData') return
+    importProject(incoming: ExportedProjectData) {
+      if (!incoming || incoming.is !== 'oneBox:projectData') return
+      setIsImporting()
 
       // first of all, close all panels
       api.resetProject()
 
       // then import files and open panels
-      setTitle(data.title || 'OneBox Project')
-      files.update('files', data.files.map((raw): VTextFile => {
-        return {
-          ...raw,
-          lang: raw.lang as Lang || Lang.UNKNOWN,
-          contentBinary: !!raw.contentBinary && Buffer.from(raw.contentBinary, 'base64'),
-        }
-      }))
-      if (data.dockview) panels.state.dockview.fromJSON(cloneDeep(data.dockview))
+      const data = { ...emptyProjectData, ...incoming }
+      batch(() => {
+        setTitle(data.title)
+        files.update('files', data.files.map((raw): VTextFile => {
+          return {
+            ...raw,
+            lang: raw.lang as Lang || Lang.UNKNOWN,
+            contentBinary: !!raw.contentBinary && Buffer.from(raw.contentBinary, 'base64'),
+          }
+        }))
+        ui.update({ showSidebar: data.showSidebar })
+      })
+      if (data.dockview) {
+        setTimeout(() => {
+          panels.state.dockview.fromJSON(cloneDeep(data.dockview))
+        }, 100)
+      }
     },
     saveLastProject: debounce(async () => {
+      if (isImporting) return
       const data = api.exportProject()
       await localForage.setItem(LS_LAST_PROJECT_DATA, data)
-    }, 2000, { leading: true, trailing: true }),
+    }, autoSaveDebounceTime, { leading: true, trailing: true }),
     async loadLastProject() {
       const projectData = await localForage.getItem<ExportedProjectData>(LS_LAST_PROJECT_DATA)
       if (!projectData) return false

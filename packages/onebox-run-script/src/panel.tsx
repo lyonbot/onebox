@@ -2,7 +2,7 @@
 
 /* @refresh granular */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Show, createMemo, createSignal, on, onCleanup } from "solid-js"
+import { Show, createMemo, createSignal, getOwner, on, onCleanup, runWithOwner } from "solid-js"
 import { useOneBox } from "~/store"
 import { AdaptedPanelProps } from "~/panels/adaptor"
 import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
@@ -23,7 +23,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
     // adding if(..) to make top-level `let` works in incremental mode
     (window as any).console.log('%cOneBox execute at %s', 'color: #0a0', new Date().toLocaleTimeString())
-    ;(window as any).ob = obApi()
+      ; (window as any).ob = obApi()
     document.write('<script>\nif (1) {\n' + file()?.content + '\n}</script>')
   }
 
@@ -68,6 +68,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
   const [justPointerDownAtDevTool, setJustPointerDownAtDevTool] = createSignal(false)
 
   const constructSandbox = () => {
+    const owner = getOwner()
     onCleanup(() => setSandbox(null))
     const initializeFromSandboxIframe = async (el: HTMLIFrameElement) => {
       const retryEnd = Date.now() + 1000
@@ -106,7 +107,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
         }
       }
       window.addEventListener('message', messageForward)
-      onCleanup(() => window.removeEventListener('message', messageForward))
+      runWithOwner(owner, () => onCleanup(() => window.removeEventListener('message', messageForward)))
 
       const script = doc.createElement('script')
       script.src = chiiTargetJS + '#/target.js' // chii relys on this filename

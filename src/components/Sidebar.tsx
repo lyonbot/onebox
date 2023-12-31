@@ -97,7 +97,7 @@ export function Sidebar(props: { id: string }) {
               oneBox.api.openFile(file.filename)
             }}
             onDblClick={(ev) => {
-              oneBox.api.openFile(file.filename, (ev.metaKey || ev.ctrlKey) ? 'right' : 'within')
+              oneBox.api.openFile(file.filename, ev.shiftKey ? 'below' : (ev.metaKey || ev.ctrlKey) ? 'right' : 'within')
             }}
             onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
               <div class='ob-status-actionHint'>

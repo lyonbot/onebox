@@ -1,5 +1,5 @@
 import localForage from 'localforage';
-import { JSXElement } from 'solid-js';
+import { JSXElement, getOwner, runWithOwner } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { PromptRequest } from '~/components/PromptBox';
 import { watch } from '~/utils/solid';
@@ -16,9 +16,10 @@ export function createUIStore() {
     rootHasFocus: 0,
   });
 
+  const owner = getOwner()
   localForage.getItem<boolean>(LS_DARK_MODE).then(val => {
     if (val !== null) update('darkMode', val);
-    watch(() => state.darkMode, value => localForage.setItem(LS_DARK_MODE, value))
+    runWithOwner(owner, () => watch(() => state.darkMode, value => localForage.setItem(LS_DARK_MODE, value)))
   })
 
   const api = {

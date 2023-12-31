@@ -1,10 +1,9 @@
 /* @refresh granular */
-import { Show, batch, createSignal, getOwner, onMount, runWithOwner } from "solid-js";
+import { Show, batch, createSignal, onMount } from "solid-js";
 import { ExportedProjectData, useOneBox } from "./store";
 import { Sidebar } from "./components/Sidebar";
 import * as monaco from 'monaco-editor';
 import _ from 'lodash'
-import { watch } from "./utils/solid";
 import { OneBoxDockview } from "./panels";
 import { StatusBar } from "./components/StatusBar";
 import { clsx, modKey, getSearchMatcher, Nil } from "yon-utils";
@@ -130,7 +129,7 @@ export default function App() {
       onFocusOut={() => oneBox.ui.update('rootHasFocus', x => x - 1)}
     >
       <Sidebar id="ob-sidebar" />
-      <div id="ob-editZone"><EditZone /></div>
+      <div id="ob-editZone"><OneBoxDockview /></div>
       <StatusBar id="ob-statusBar" />
 
       <Show when={isAboutDropFiles()}>
@@ -267,28 +266,4 @@ export default function App() {
       handlers.forEach(f => f())
     }
   }
-}
-
-function EditZone() {
-  const oneBox = useOneBox()
-  const owner = getOwner()
-
-  watch(() => oneBox.panels.state.dockview, dockview => {
-    if (!dockview) return
-
-    setTimeout(() => {
-      if (!oneBox.api.loadLastProject()) {
-        // oneBox.api.createFileAndOpen()
-      }
-
-      // update cache when window lost focus, or mouse leave the whole window
-      const save = () => runWithOwner(owner, () => oneBox.api.saveLastProject())
-      document.body.addEventListener('focusout', save)
-      document.documentElement.addEventListener('mouseleave', save)
-      document.addEventListener('visibilitychange', save)
-
-    }, 100) // avoid floating group losing position (due to dockview's size not ready)
-  })
-
-  return <OneBoxDockview />
 }
