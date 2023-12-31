@@ -35,6 +35,7 @@ export function setupMonacoTsLibs() {
     module: monaco.languages.typescript.ModuleKind.AMD,
     typeRoots: ['node_modules/@types'],
     allowSyntheticDefaultImports: true,
+    esModuleInterop: true,
     allowJs: true,
     jsx: monaco.languages.typescript.JsxEmit.React,
     outDir: '__out__',
