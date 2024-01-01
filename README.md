@@ -1,6 +1,6 @@
 # OneBox : 📝 a Draft Notebook for Developers
 
-<img src="./public/favicon.png" style="width: 120px; float: right">
+<img src="./public/favicon.png" style="width: 120px" align="right">
 
 [ [Online Version](https://lyonbot.github.io/onebox/) ]
 
