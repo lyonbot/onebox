@@ -20,7 +20,7 @@ export function createQuickActionsMemo(oneBox: OneBox, filename: string | Nil) {
     })
   })
 
-  return createMemo(() => arrays().map(get => get()).flat())
+  return arrays
 }
 
 export async function getActions(oneBox: OneBox, filename: string | Nil) {

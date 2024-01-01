@@ -102,10 +102,28 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
         </Show>
 
         <For each={actionsFromPlugins()}>
-          {action => <button class="ob-panel-toolbarBtn" onClick={() => void action.run()}>
-            {action.label?.() || action.value}
-          </button>}
+          {list => <For each={list()}>
+            {action => <button class="ob-panel-toolbarBtn" onClick={() => void action.run()}>
+              {action.label?.() || action.value}
+            </button>}
+          </For>}
         </For>
+
+        <button class="ob-panel-toolbarBtn text-green-7"
+          onClick={() => oneBox.api.interactiveSummonAction(file.filename)}
+          onMouseEnter={oneBox.ui.api.getActionHintEvFor(<>
+            <div class='ob-status-actionHint'>
+              (
+              psst. just press
+              <kbd>Cmd+Enter</kbd>
+              to summon an Action
+              )
+            </div>
+          </>)}
+        >
+          <i class='i-mdi-cook' />
+          Actions
+        </button>
       </div>
 
       <MonacoEditor
