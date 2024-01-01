@@ -18,7 +18,7 @@ export default defineConfig({
       includeAssets: ['favicon.png'],
       manifest: {
         name: 'OneBox',
-        description: 'Draft book for Developers',
+        description: 'Draft Notebook for Developers',
         theme_color: '#333333',
         icons: [{ src: "./favicon.png", sizes: '512x512', type: 'image/png' }],
       },

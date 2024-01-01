@@ -1,6 +1,6 @@
 {
   "name": "onebox",
-  "description": "Draft book for Developers",
+  "description": "Draft Notebook for Developers",
   "scripts": {
     "dev": "vite",
     "build": "vite build"
