@@ -74,7 +74,8 @@ export function setupMonacoOneBoxFileIntegration(oneBox: OneBox) {
 
       if (oneBox.api.getFile(filename)) {
         // exists
-        oneBox.api.openFile(filename)
+        const aside = !!(window as any).event?.shiftKey
+        oneBox.api.openFile(filename, aside ? 'right' : false)
 
         if (selection) setTimeout(() => {
           const editor = oneBox.panels.state.activeMonacoEditor

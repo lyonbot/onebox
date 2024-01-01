@@ -177,7 +177,10 @@ function createOneBoxStore() {
         'Rename current file to', {
         default: filename,
         onMount(ev) {
-          if (ev.inputBox.selectionEnd) ev.inputBox.selectionEnd -= extname(filename).length
+          if (ev.inputBox.selectionEnd) {
+            ev.inputBox.selectionStart = filename.lastIndexOf('/') + 1
+            ev.inputBox.selectionEnd -= extname(filename).length
+          }
         },
         enumOptions(input) {
           if (input && !isValidFilename(input)) return [
