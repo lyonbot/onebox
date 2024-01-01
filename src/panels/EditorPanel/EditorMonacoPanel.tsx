@@ -121,7 +121,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
             </div>
           </>)}
         >
-          <i class='i-mdi-cook' />
+          <i class='i-mdi-rocket' />
           Actions
         </button>
       </div>

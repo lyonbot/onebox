@@ -50,7 +50,7 @@ export function Sidebar(props: { id: string }) {
   >
     <div class="ob-sidebar-resizer" onPointerDown={ev => {
       const ow = width();
-      ev.preventDefault()
+      ev.currentTarget.setPointerCapture(ev.pointerId)
       setIsResizing(true)
       startMouseMove({
         initialEvent: ev,

@@ -77,7 +77,6 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
   const [reconstructCounter, setReconstructCounter] = createSignal(0)
   const reconstruct = () => { setReconstructCounter(c => c + 1) }
   const activePanel = () => { props.api.setActive(); wrapperDiv?.dispatchEvent(new MouseEvent('mousedown')) }
-  const [isResizing, setIsResizing] = createSignal(false)
 
   watch(() => runScriptConf().randomKey, () => {
     const mode = runScriptConf().mode ?? 'refreshing'
@@ -213,11 +212,9 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
         const sandboxIframe = sandbox()?.iframe
         if (!sandboxIframe || !devtoolIFrame) return
 
-        ev.preventDefault()
+        ev.currentTarget.setPointerCapture(ev.pointerId)
         const oldValue = runScriptConf().htmlPreviewHeight! || 30
         const pixelsPerPoint = sandboxIframe.offsetHeight / oldValue
-        setIsResizing(true)
-        devtoolIFrame.style.pointerEvents = 'none'
 
         startMouseMove({
           initialEvent: ev,
@@ -226,10 +223,6 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
             const percentage = clamp(Math.round(newValue), 5, 90)
 
             props.updateParams('runScript', 'htmlPreviewHeight', percentage)
-          },
-          onEnd() {
-            setIsResizing(false)
-            devtoolIFrame!.style.pointerEvents = ''
           },
         })
       }}>
@@ -254,7 +247,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
       <iframe
         allow="clipboard-read *; clipboard-write *"
         src="about:blank"
-        class={clsx("border-none w-full ob-darkMode-intact bg-white", (isResizing() || !sandbox()) && 'pointer-events-none')}
+        class="border-none w-full ob-darkMode-intact bg-white"
         style={`height: ${runScriptConf().showHTMLPreview ? `${runScriptConf().htmlPreviewHeight}%` : '0'}`}
         ref={initializeFromSandboxIframe}
       ></iframe>
