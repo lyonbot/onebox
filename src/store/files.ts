@@ -80,7 +80,7 @@ export function createFilesStore(root: () => OneBox) {
       // monaco model
 
       const model = createMemo(() => {
-        const uri = monaco.Uri.parse(`file:///${file.filename}`)
+        const uri = monaco.Uri.parse(`file:///${encodeURI(file.filename)}`)
         const model = untrack(() => {
           const existed = monaco.editor.getModel(uri)
           if (!existed) return monaco.editor.createModel(file.content, 'plaintext', uri)

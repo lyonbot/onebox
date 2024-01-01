@@ -29,7 +29,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     if (file.lang === Lang.TYPESCRIPT || /^(import|export)\s/m.test(content) || (file.lang === Lang.JAVASCRIPT && /<\w+/.test(content))) {
       const tsWorkerGetter = await monaco.languages.typescript[file.lang === Lang.TYPESCRIPT ? 'getTypeScriptWorker' : 'getJavaScriptWorker']()
       const ts = await tsWorkerGetter()
-      const out = await ts.getEmitOutput('file:///' + file.filename)
+      const out = await ts.getEmitOutput('file:///' + encodeURI(file.filename))
 
       content = out.outputFiles[0].text
     }
@@ -191,7 +191,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
             let filename = rawName
             if (filename.startsWith('./')) filename = filename.slice(2)
 
-            const file = oneBox.api.getFile(oneBox.files.api.completeFilename(filename))
+            const file = oneBox.api.getFile(oneBox.files.api.completeFilename(decodeURI(filename)))
             if (!file) throw new Error(`File not found: ${rawName}`)
 
             const out = await transpile(file)
