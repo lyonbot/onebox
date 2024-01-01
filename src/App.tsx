@@ -33,25 +33,53 @@ export default function App() {
 
   onMount(() => {
     addListener(window, 'keydown', ev => {
+      // Mod+B toggle sidebar
       if (modKey(ev) === modKey.Mod && ev.code == 'KeyB') {
         ev.preventDefault()
         oneBox.ui.api.toggleSidebar()
         return
       }
 
+      // Mod+S save file
       if (modKey(ev) === modKey.Mod && ev.code == 'KeyS') {
         ev.preventDefault()
         oneBox.api.downloadCurrentFile()
         return
       }
 
+      // Mod+Shift+S save project
       if (modKey(ev) === (modKey.Mod | modKey.Shift) && ev.code == 'KeyS') {
         ev.preventDefault()
         oneBox.api.downloadCurrentProject()
         return
       }
 
-      if (modKey(ev) === modKey.Mod && ev.code == 'KeyP') {
+      // Mod+W close file
+      if (modKey(ev) === modKey.Mod && ev.code == 'KeyW') {
+        ev.preventDefault()
+        const id = oneBox.panels.state.activePanelId
+        if (id) oneBox.panels.api.closePanel(id)
+        return
+      }
+
+      // Mod+N create file
+      if (modKey(ev) === modKey.Mod && ev.code == 'KeyN') {
+        ev.preventDefault()
+        const presetName = oneBox.files.api.nonConflictFilename(join(dirname(oneBox.api.getCurrentFilename()), 'untitled.txt'))
+        oneBox.prompt('Create File', {
+          default: presetName,
+          onMount(env) {
+            env.inputBox.selectionStart = env.inputBox.value.lastIndexOf('/') + 1
+            env.inputBox.selectionEnd = env.inputBox.value.length - 4
+          },
+        }).then(filename => {
+          if (filename) oneBox.api.createFileAndOpen(filename)
+        })
+        return
+      }
+
+      // Mod+O / Mod+P open file
+      if (modKey(ev) === modKey.Mod && (ev.code == 'KeyP' || ev.code == 'KeyO')) {
         ev.preventDefault()
         const files = oneBox.files.state.files;
         if (files.length) {
@@ -84,13 +112,18 @@ export default function App() {
         return
       }
 
+      // Mod+Enter open action panel
       if (modKey(ev) === modKey.Mod && ev.code == 'Enter') {
         ev.preventDefault()
         oneBox.api.interactiveSummonAction(oneBox.api.getCurrentFilename())
         return
       }
 
-      if (modKey(ev) === 0 && ev.code === 'F2') {
+      // F2 | Mod+Shift+R rename file
+      if (
+        (modKey(ev) === 0 && ev.code === 'F2') ||
+        (modKey(ev) === (modKey.Mod | modKey.Shift) && ev.code === 'KeyR')
+      ) {
         ev.preventDefault()
         oneBox.api.interactiveRenameFile(oneBox.api.getCurrentFilename())
         return
@@ -111,22 +144,46 @@ export default function App() {
       class={clsx(oneBox.ui.state.darkMode && 'darkMode')}
       ref={div => {
         let dragBug = 0 // dnd api bug? after first hit, (dragenter and dragleave) fire alternately
+        let dragFromSelf = false
+        const willDropFile = false
 
-        addListener(div, 'dragenter', ev => {
-          const hasFiles = !!ev.dataTransfer?.types.includes('Files')
-          setIsAboutDropFiles(hasFiles)
-          dragBug++;
+        addListener(div, 'dragstart', ev => {
+          dragFromSelf = true
         }, true)
 
-        addListener(div, 'dragleave', () => {
-          if (--dragBug === 0) setIsAboutDropFiles(false)
+        addListener(div, 'dragend', ev => {
+          dragFromSelf = false
+        }, true)
+
+        addListener(div, 'dragenter', ev => {
+          if (!dragFromSelf) {
+            const hasFiles = !!ev.dataTransfer?.types.includes('Files')
+            setIsAboutDropFiles(hasFiles)
+            if (hasFiles) ev.stopPropagation()
+            dragBug++;
+          }
+        }, true)
+
+        addListener(div, 'dragover', ev => {
+          if (!dragFromSelf && isAboutDropFiles()) {
+            ev.preventDefault()
+            ev.stopPropagation()
+          }
+        }, true)
+
+        addListener(div, 'dragleave', (ev) => {
+          if (!dragFromSelf) {
+            if (--dragBug === 0) setIsAboutDropFiles(false)
+            if (isAboutDropFiles()) ev.stopPropagation()
+          }
         }, true)
 
         addListener(div, 'drop', (ev) => {
-          dragBug = 0;
-          setIsAboutDropFiles(false)
-
-          if (!oneBox.panels.state.isDraggingPanel) handleIncomingDataTransferEvent(ev, ev.dataTransfer)
+          if (!dragFromSelf) {
+            dragBug = 0;
+            setIsAboutDropFiles(false)
+            handleIncomingDataTransferEvent(ev, ev.dataTransfer) // no validate `isAboutDropFiles`; check monaco in handleIncomingDataTransferEvent
+          }
         }, true)
       }}
       onFocusIn={() => oneBox.ui.update('rootHasFocus', x => x + 1)}
@@ -200,7 +257,11 @@ export default function App() {
   function handleIncomingDataTransferEvent(ev: Event, dataTransfer: DataTransfer | Nil) {
     if (!dataTransfer) return
     if (dataTransfer.types.includes('text/x-ob-dnd-ignore')) return
-    if ((ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *') && !/monaco/.test((ev.target as any)?.className)) return
+
+    const isDropToMonaco = !!(ev.target as HTMLElement)?.matches('.monaco-scrollable-element *')
+    const isDropToRegularEditor = !isDropToMonaco && !!(ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *')
+    const isNotDraggingFile = !dataTransfer.types.includes('Files')
+    if ((isNotDraggingFile && isDropToMonaco) || isDropToRegularEditor) return
 
     const editor = oneBox.panels.state.activeMonacoEditor
     const file = oneBox.api.getFile(oneBox.api.getCurrentFilename())

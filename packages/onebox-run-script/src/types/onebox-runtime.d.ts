@@ -34,10 +34,10 @@ export interface OBAPI {
   /**
    * Writes content to a file. If the file does not exist, it will be created.
    * @param path - The relative path of the file to write. eg. `"./foobar.txt"`
-   * @param content - The content to write. If is object, will be JSON.stringify-ed
+   * @param content - The content to write. If is object, will be JSON.stringify-ed; is Buffer, will be written as binary file.
    * @param format - Optional. Specifies the format of the file. If omitted, will be inferred from the file extension.
    */
-  writeFile(path: string, content: any, format?: 'yaml' | 'json'): void;
+  writeFile(path: string, content: any, format?: 'yaml' | 'json' | 'binary'): void;
 
   /**
    * Appends content to a file. If the file does not exist, it will be created.
@@ -48,13 +48,6 @@ export interface OBAPI {
    * @param content - The content to write.
    */
   appendFile(path: string, content: any): void;
-
-  /**
-   * Writes content to a file as a Buffer. If the file does not exist, it will be created.
-   * @param path - The relative path of the file to write. eg. `"./foobar.txt"`
-   * @param content - The content to write.
-   */
-  writeBinaryFile(path: string, content: Buffer): void;
 
   /**
    * Opens a file.

@@ -3,6 +3,7 @@ import { OneBox } from '~/store';
 import { OBAPI } from './types/onebox-runtime';
 import { Buffer } from 'buffer';
 import { OBAPIFactory } from './runtime-api';
+import { batch } from 'solid-js';
 
 // Note: we can't use `Buffer` directly, because it is not the one that injected to sandbox iframe
 const isBinary = (x: any) => typeof x === 'object' && x && typeof x.byteLength === 'number' && typeof x.slice === 'function';
@@ -35,6 +36,19 @@ export function makeObFactory(oneBox: OneBox): OBAPIFactory {
       writeFile: (fn, content, format) => {
         fn = norm(fn);
 
+        if (isBinary(content) || format === 'binary') {
+          const buffer = Buffer.from(content);
+          const file = oneBox.files.api.getControllerOf(fn);
+
+          if (file) batch(() => {
+            file.setContent('')
+            file.setContentBinary(buffer);
+          })
+          else oneBox.files.api.createFile({ contentBinary: buffer, filename: fn });
+
+          return
+        }
+
         if (format === 'json') content = JSON.stringify(content, null, 2) + '\n';
         if (format === 'yaml') content = jsyaml.dump(content) + '\n';
         if (typeof content === 'object') content = JSON.stringify(content, null, 2) + '\n';
@@ -42,17 +56,11 @@ export function makeObFactory(oneBox: OneBox): OBAPIFactory {
         content = String(content);
 
         const file = oneBox.files.api.getControllerOf(fn);
-        if (file) file.setContent(content);
+        if (file) batch(() => {
+          file.setContent(content)
+          file.setContentBinary(false);
+        })
         else oneBox.files.api.createFile({ content, filename: fn });
-      },
-      writeBinaryFile(path, content) {
-        path = norm(path);
-
-        const buffer = Buffer.from(content);
-        const file = oneBox.files.api.getControllerOf(path);
-
-        if (file) file.setContentBinary(buffer);
-        else oneBox.files.api.createFile({ contentBinary: buffer, filename: path });
       },
       appendFile: (fn, content) => {
         fn = norm(fn);
@@ -70,13 +78,19 @@ export function makeObFactory(oneBox: OneBox): OBAPIFactory {
             appendData.copy(contentBinary, prevLength)
           }
 
-          if (file) file.setContentBinary(contentBinary)
+          if (file) batch(() => {
+            file.setContent('')
+            file.setContentBinary(contentBinary);
+          })
           else oneBox.files.api.createFile({ contentBinary, filename: fn });
         } else {
           if (typeof content === 'object') content = JSON.stringify(content, null, 2) + '\n';
           else content = String(content);
 
-          if (file) file.setContent(file.content + content);
+          if (file) batch(() => {
+            file.setContent(file.content + content);
+            file.setContentBinary(false);
+          })
           else oneBox.files.api.createFile({ content, filename: fn });
         }
       },

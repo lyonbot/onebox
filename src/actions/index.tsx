@@ -39,7 +39,10 @@ export async function getActions(oneBox: OneBox, filename: string | Nil) {
   // JSON Formatting
   if (file.lang === Lang.JSON) {
     actions.push({
-      label: () => <div><i class="i-mdi-code-json"></i> Format JSON</div>,
+      label: () => <div class="flex gap-2">
+        <i class="i-mdi-code-json"></i> {' Format JSON plus'}
+        <div class="ml-auto op-70">auto-fix quotes & commas, remove comments</div>
+      </div>,
       value: 'format json',
       run() {
         file.setContent(JSON.stringify(JSON5.parse(file.content), null, 2))

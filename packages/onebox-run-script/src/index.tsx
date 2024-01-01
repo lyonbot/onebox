@@ -37,9 +37,15 @@ const libraryHelpMessage = `
 And you can use ES Module import / export to composite! More features will be added in the future.
 `.trim()
 
+const mlLangs = new Set([
+  Lang.JSON,
+  Lang.YAML,
+])
+
 const langs = new Set([
   Lang.JAVASCRIPT,
   Lang.TYPESCRIPT,
+  ...mlLangs,
 ])
 
 const panelId = 'onebox-run-script:panel'
@@ -81,7 +87,7 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       if (!alreadyRan && !langMatch) return
 
       yield {
-        label: () => <div><i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : 'Run'} Script</div>,
+        label: () => <div><i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : mlLangs.has(file.lang) ? 'Send to DevTool' : 'Run'} Script</div>,
         value: 'rerun run script',
         run: () => runScript(file),
       }
@@ -93,13 +99,13 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
 
       yield {
         label: () => <div onMouseEnter={oneBox.ui.api.getActionHintEvFor(<div class='ob-status-actionHint'><kbd>F5</kbd>Run</div>)}>
-          <i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : 'Run'}
+          <i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : mlLangs.has(file.lang) ? 'Send to DevTool' : 'Run'}
         </div>,
         value: 'rerun run script',
         run: () => runScript(file),
       }
 
-      if (langMatch)
+      if (langMatch && (!mlLangs.has(file.lang) || alreadyRan))
         yield {
           label: () => <div><i class="i-mdi-library"> </i> Libraries</div>,
           value: 'show libraries',

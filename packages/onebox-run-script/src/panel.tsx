@@ -4,7 +4,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { clamp } from "lodash"
 import * as monaco from 'monaco-editor'
-import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
+import jsyaml from 'js-yaml'
+import JSON5 from 'json5'
+import { delay, makePromise, startMouseMove } from "yon-utils"
 import { Show, createMemo, createSignal, getOwner, on, onCleanup, runWithOwner } from "solid-js"
 import { Lang } from "~/utils/lang"
 import { useOneBox } from "~/store"
@@ -22,8 +24,22 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
   const file = createMemo(() => oneBox.api.getFile(props.params.filename))
 
 
-  async function transpile(file: VTextFileController): Promise<{ code: string, isAMD?: boolean }> {
+  async function transpile(file: VTextFileController, isMain?: boolean): Promise<{ code: string, isAMD?: boolean }> {
     let { content } = file
+
+    // transpile JSON YAML
+    if (file.lang === Lang.JSON || file.lang === Lang.YAML) {
+      content = file.lang === Lang.JSON ? content : JSON.stringify(jsyaml.load(content))
+      if (isMain) {
+        // make a copy in host
+        (window as any).data = JSON5.parse(content)
+
+        return {
+          code: "console.log('%cLoaded as global variable:%c data', 'color: #0a0', 'color: #666');\n"+
+            `window.data = ${content}`,
+        }
+      }
+    }
 
     // transpile TS, ESM, JSX
     if (file.lang === Lang.TYPESCRIPT || /^(import|export)\s/m.test(content) || (file.lang === Lang.JAVASCRIPT && /<\w+/.test(content))) {
@@ -55,7 +71,8 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
 
     try {
       window._oneBoxRuntime.resetAMD()
-      const out = await transpile(file()!)
+      const f = file()!
+      const out = await transpile(f, true)
       if (!out.isAMD) {
         // just run in window
         document.write('<script>\nif (1) {\n' + out.code + '\n}</script>')

@@ -1,5 +1,6 @@
 {
   "name": "onebox",
+  "description": "Draft book for Developers",
   "scripts": {
     "dev": "vite",
     "build": "vite build"
@@ -23,6 +24,7 @@
     "unocss": "^0.58.2",
     "vite": "^4.5.1",
     "vite-plugin-monaco-editor": "^1.1.0",
+    "vite-plugin-pwa": "^0.17.4",
     "vite-plugin-solid": "^2.8.0"
   },
   "dependencies": {

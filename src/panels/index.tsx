@@ -28,7 +28,7 @@ function Watermark({ params }: { params: WatermarkRendererInitParameters }) {
     <div>
       <p class="text-lg">Create a file to start</p>
 
-      <p>
+      <p class="flex gap-4 justify-center">
         <button class="ob-watermark-bigButton" onClick={() => oneBox.api.createFileAndOpen()}>
           <i class="i-mdi-plus"></i>
           New File

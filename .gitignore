@@ -1,5 +1,6 @@
 
 dist
+dev-dist
 .solid
 .output
 .vercel
