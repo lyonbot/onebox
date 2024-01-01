@@ -3,21 +3,24 @@ import { OneBox } from "~/store"
 import { Lang } from "~/utils/lang"
 import JSON5 from 'json5'
 import { OneBoxAction, installedPlugins } from "~/plugins"
+import { createMemo, mapArray } from "solid-js"
 
-export function getQuickActions(oneBox: OneBox, filename: string | Nil) {
+export function createQuickActionsMemo(oneBox: OneBox, filename: string | Nil) {
   const { files } = oneBox
-  const file = files.api.getControllerOf(filename)
-  if (!file) return []
+  const emptyArray = [] as OneBoxAction[]
 
-  const actions: OneBoxAction[] = [];
-  for (const { getQuickActions } of installedPlugins()) {
-    if (!getQuickActions) continue
-    for (const action of getQuickActions(file)) {
-      actions.push(action)
-    }
-  }
+  const file = createMemo(() => files.api.getControllerOf(filename))
+  const arrays = mapArray(installedPlugins, ({ getQuickActions }) => {
+    if (!getQuickActions) return () => emptyArray
 
-  return actions
+    return createMemo(() => {
+      const f = file()
+      if (!f) return emptyArray
+      return Array.from(getQuickActions(f))
+    })
+  })
+
+  return createMemo(() => arrays().map(get => get()).flat())
 }
 
 export async function getActions(oneBox: OneBox, filename: string | Nil) {

@@ -30,12 +30,11 @@ function chainBefore<T extends Fn>(fn: T | Nil, newFn: (...args: Parameters<T>) 
 function Markdown(props: { file: VTextFileController, panelId: string }) {
   const { file } = props; // assuming not change
   const oneBox = useOneBox()
-  const currentDir = createMemo(() => dirname(file.filename))
 
   function getFileFromURL(url: string | Nil) {
     if (!url) return
-    const rel = decodeURI(url.replace(/^\.\//, '').replace(/[?#].*$/, ''))
-    const ctrl = oneBox.api.getFile(join(currentDir(), rel))
+    const rel = decodeURI(url.replace(/[?#].*$/, ''))
+    const ctrl = oneBox.api.getFile(file.resolvePath(rel))
 
     if (ctrl) return ctrl
     return

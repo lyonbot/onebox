@@ -2,7 +2,7 @@
 
 /* @refresh granular */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { clamp, has } from "lodash"
+import { clamp } from "lodash"
 import * as monaco from 'monaco-editor'
 import { clsx, delay, makePromise, startMouseMove } from "yon-utils"
 import { Show, createMemo, createSignal, getOwner, on, onCleanup, runWithOwner } from "solid-js"
@@ -45,7 +45,7 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
     document: Document,
     window: Window & typeof globalThis & SandboxWindow,
   })
-  const obApi = createMemo(() => file() && obFactory()(file()!))
+  const obApi = createMemo(() => file() && obFactory()(file()!, () => sandbox()!.window))
   const runScriptInSandbox = async () => {
     const { document, window } = sandbox()!;
 
@@ -187,19 +187,13 @@ export default function RunScriptPanel(props: AdaptedPanelProps) {
         if (!win._oneBoxRuntime) throw new Error('OneBox runtime not ready');
 
         win._oneBoxRuntime.fetchModuleScript =
-          async (filename: string) => {
+          async (rawName: string) => {
+            let filename = rawName
             if (filename.startsWith('./')) filename = filename.slice(2)
 
-            if (!has(oneBox.files.controllers(), filename)) {
-              // amd omitted .extname. find name for it
-              const candidates = Object.keys(oneBox.files.controllers()).filter(name => name.startsWith(filename)).sort((a, b) => a.length - b.length)
-              const name = candidates.find(name => name.endsWith('.js')) || candidates[0]
-              if (!name) throw new Error(`AMD module not found: ${filename}`)
+            const file = oneBox.api.getFile(oneBox.files.api.completeFilename(filename))
+            if (!file) throw new Error(`File not found: ${rawName}`)
 
-              filename = name
-            }
-
-            const file = oneBox.api.getFile(filename)!
             const out = await transpile(file)
 
             let code = out.code

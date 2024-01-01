@@ -15,6 +15,7 @@ import { PromptBox } from "./components/PromptBox";
 import { setupMonacoEnv } from "./monaco";
 import { installPlugin } from "./plugins";
 import { addListener } from './utils/solid';
+import { OneBoxDependenciesPlugin } from './builtin-plugins/dependencies';
 
 const global = window as any
 global.monaco = monaco
@@ -26,6 +27,7 @@ export default function App() {
   setupMonacoEnv(oneBox)
 
   // install plugins
+  installPlugin(oneBox, OneBoxDependenciesPlugin)
   import('onebox-markdown').then(m => installPlugin(oneBox, m.default))
   import('onebox-run-script').then(m => installPlugin(oneBox, m.default))
 

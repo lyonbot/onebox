@@ -1,6 +1,7 @@
 // this file runs in the context of the sandbox
 
 import lodash from 'lodash'
+import JSON5 from 'json5';
 import { elt } from "yon-utils";
 import { Buffer } from 'buffer'
 import { simpleAMD } from './simpleAMD';
@@ -17,6 +18,7 @@ const ctx = {
   CryptoJS,
   jsyaml,
   yaml: jsyaml,
+  JSON5,
   print: (...args: any[]) => console.log(...args),
   React: {
     createElement: elt,

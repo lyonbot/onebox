@@ -1,8 +1,10 @@
 import * as monaco from "monaco-editor";
 import { dirname, join, relative } from "path";
 import { OneBox } from "~/store";
+import { getRangeInsideDelim } from "~/utils/string";
 
 const isScriptFile = (name: string) => /\.([jt]sx?)$/i.test(name)
+const getFileLinkRe = () => /[<[('"](\.\.?\/[^'")\]>?#]+)/g  // [0]=leading paren + filename, [1]=filename
 
 /**
  * Providing OneBox file jumping and path auto-completion
@@ -88,6 +90,79 @@ export function setupMonacoOneBoxFileIntegration(oneBox: OneBox) {
         // No! maybe open a dom.d.ts
         return false
       }
+    },
+  })
+
+  monaco.languages.registerLinkProvider(langs, {
+    provideLinks(model) {
+      const links = [] as monaco.languages.ILinksList['links']
+
+      const file = oneBox.api.getFile(model.uri.path.slice(1))
+      if (!file) return { links }
+
+      const text = model.getValue()
+      const re = getFileLinkRe()
+      for (const match of text.matchAll(re)) {
+        const rel = match[1]
+        const filename = file.resolvePath(decodeURI(rel))
+        const to = oneBox.api.getFile(filename)
+        if (!to) continue
+
+        const startPos = model.getPositionAt(match.index! + 1); // skip the first char
+        const endPos = startPos.delta(0, match[1].length);
+
+        links.push({
+          range: monaco.Range.fromPositions(startPos, endPos),
+          url: `file:///${filename}`,
+          tooltip: filename,
+        })
+      }
+
+      return { links }
+    },
+  })
+
+  monaco.languages.registerRenameProvider(langs, {
+    provideRenameEdits(model, position, newPartialName) {
+      const bigDelim = /['"()[\]<>\s?#]/
+      const smallDelim = /[\p{P}\p{S}]/u
+
+      const lineText = model.getLineContent(position.lineNumber);
+
+      // find the filename part, which is surrounded by delim
+      // NOTE: in monaco-editor, this could be kinda longer than `newName`.
+      //   e.g. `./foo/aaa` -> `./foo/bbb` , the `newName` could be merely `bbb`
+
+      const { start: startPos, end: endPos } = getRangeInsideDelim(lineText, position.column, bigDelim)
+      const oldSourceCodePart = lineText.slice(startPos, endPos)
+      if (!oldSourceCodePart.startsWith('.')) return { edits: [] }
+
+      // look for the old file name (in js/tsx, the suffix may be omitted)
+
+      const modelFile = oneBox.api.getFile(model.uri.path.slice(1))
+      if (!modelFile) return { edits: [] }
+
+      const oldFilenameMaybe = modelFile.resolvePath(decodeURI(oldSourceCodePart)) // note: might missing .extname
+      const oldFilename = oneBox.files.api.completeFilename(oldFilenameMaybe)
+      if (!oldFilename) return { edits: [] } // file not found
+
+      const autoSuffix = oldFilename.slice(oldFilenameMaybe.length)
+
+      const toRenameFile = oneBox.api.getFile(oldFilename)
+      if (!toRenameFile) return { edits: [] }
+
+      // rename the file!
+      // NOTE: in monaco-editor, `newName` is not guaranteed to be the full filename path
+      //   e.g. `./foo/aaa` -> `./foo/bbb` , the `newName` could be merely `bbb`
+
+      const tt = getRangeInsideDelim(oldSourceCodePart, position.column - startPos, smallDelim)
+      const newSourcePart = oldSourceCodePart.slice(0, tt.start) + newPartialName + oldSourceCodePart.slice(tt.end) + autoSuffix
+      const newFilename = modelFile.resolvePath(decodeURI(newSourcePart))
+      toRenameFile.setFilename(newFilename)
+
+      // note: more edits will be provided by plugins
+
+      return { edits: [] }
     },
   })
 }

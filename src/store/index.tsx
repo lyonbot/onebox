@@ -170,11 +170,11 @@ function createOneBoxStore() {
     async interactiveRenameFile(filename: string | Nil) {
       if (!filename) return
 
-      const file = files.controllers()[filename]
+      const file = files.api.getControllerOf(filename)
       if (!file) return
 
       const newName = await ui.api.prompt(
-        'Rename to', {
+        'Rename current file to', {
         default: filename,
         onMount(ev) {
           if (ev.inputBox.selectionEnd) ev.inputBox.selectionEnd -= extname(filename).length
@@ -243,9 +243,9 @@ function createOneBoxStore() {
 
   // close file panels when file is deleted
   watch(
-    () => panels.state.panels.some(p => !files.controllers()[p.filename]),
+    () => panels.state.panels.some(p => !files.models()[p.filename]),
     () => {
-      const ids = panels.state.panels.filter(p => !files.controllers()[p.filename]).map(x => x.id)
+      const ids = panels.state.panels.filter(p => !files.models()[p.filename]).map(x => x.id)
       batch(() => {
         for (const id of ids) panels.api.closePanel(id)
       })

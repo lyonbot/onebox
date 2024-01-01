@@ -6,7 +6,7 @@ export interface OBAPI {
   /**
    * Reads the content of a file.
    * @param path - The relative path of the file to read. eg. `"./foobar.txt"`
-   * @returns The content of the file as a string.
+   * @returns The content of the file as a string. return empty string if file not exist
    */
   readText(path: string): string;
 
@@ -25,18 +25,36 @@ export interface OBAPI {
   readYAML<T = any>(path: string): T;
 
   /**
+   * Reads the content of a file as a Buffer.
+   * @param path - The relative path of the file to read. eg. `"./foobar.txt"` or `"./foobar.jpg"`
+   * @returns The content of the file as a Buffer. If file not exist, returns null
+   */
+  readBuffer(path: string): Buffer | null;
+
+  /**
    * Writes content to a file. If the file does not exist, it will be created.
    * @param path - The relative path of the file to write. eg. `"./foobar.txt"`
-   * @param content - The content to write. If is object, will be JSON.stringify-ed.
+   * @param content - The content to write. If is object, will be JSON.stringify-ed
+   * @param format - Optional. Specifies the format of the file. If omitted, will be inferred from the file extension.
    */
-  writeFile(path: string, content: any): void;
+  writeFile(path: string, content: any, format?: 'yaml' | 'json'): void;
 
   /**
    * Appends content to a file. If the file does not exist, it will be created.
+   *
+   * This works with binary files too!
+   *
    * @param path - The relative path of the file to update. eg. `"./foobar.txt"`
-   * @param content - The content to write. If is object, will be JSON.stringify-ed.
+   * @param content - The content to write.
    */
   appendFile(path: string, content: any): void;
+
+  /**
+   * Writes content to a file as a Buffer. If the file does not exist, it will be created.
+   * @param path - The relative path of the file to write. eg. `"./foobar.txt"`
+   * @param content - The content to write.
+   */
+  writeBinaryFile(path: string, content: Buffer): void;
 
   /**
    * Opens a file.

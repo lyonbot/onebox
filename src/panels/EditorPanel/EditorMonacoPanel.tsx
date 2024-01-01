@@ -12,7 +12,7 @@ import { runAndKeepCursor } from '~/monaco/utils';
 import { VTextFileController } from '~/store/files';
 import { getSearchMatcher } from 'yon-utils';
 import { installedPlugins } from '~/plugins';
-import { getQuickActions } from '~/actions';
+import { createQuickActionsMemo } from '~/actions';
 
 export default function EditorMonacoPanel(props: { file: VTextFileController, panelId: string }) {
   const oneBox = useOneBox()
@@ -84,7 +84,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
 
   // #endregion
 
-  const actionsFromPlugins = createMemo(() => getQuickActions(oneBox, file.filename))
+  const actionsFromPlugins = createQuickActionsMemo(oneBox, file.filename)
 
   return (
     <div class="flex flex-col h-full">
@@ -137,7 +137,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
               id: 'oneBox.renameFile',
               label: 'Rename File',
               run: rename,
-              keybindings: [monaco.KeyCode.F2],
+              keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.F2],
             })
 
             editor.addAction({

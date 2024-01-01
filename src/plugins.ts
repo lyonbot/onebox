@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 import type * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { createSignal, type JSXElement } from "solid-js";
+import { Accessor, createSignal, type JSXElement } from "solid-js";
 import type { Fn, Nil } from "yon-utils";
 import type { OneBox } from "./store";
 import type { VTextFileController } from "./store/files";
@@ -23,9 +24,19 @@ export interface OneBoxPluginDeclaration {
   getActions?: (file: VTextFileController) => AsyncIterableIterator<OneBoxAction>
   getQuickActions?: (file: VTextFileController) => Iterable<OneBoxAction>
   setupMonacoEditor?: (ctx: { file: VTextFileController, panelId: string, editor: monaco.editor.IStandaloneCodeEditor }) => void
+
+  /** returns an Accessor to the list of a file's dependencies. You can use createMemo inside */
+  getDependencies?: (file: VTextFileController) => Accessor<OneBoxPlugin.FileDependency[] | undefined> | undefined
+  onDependencyChangeName?: (file: VTextFileController, oldName: string, newName: string) => void
+  onDependencyRemove?: (file: VTextFileController, name: string) => void
 }
 
 export type OneBoxPlugin = (oneBox: OneBox) => OneBoxPluginDeclaration | Promise<OneBoxPluginDeclaration>
+export namespace OneBoxPlugin {
+  export interface FileDependency {
+    filename: string
+  }
+}
 
 export const [installedPlugins, setInstalledPlugins] = createSignal<OneBoxPluginDeclaration[]>([])
 

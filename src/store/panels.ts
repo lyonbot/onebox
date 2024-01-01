@@ -128,7 +128,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
           const g = dockview.getGroupPanel(id)
           if (g) {
             g.api.setActive()
-            g.group.api.setActive()
+            g.group.model.setActive(true)
           }
         })
       })
