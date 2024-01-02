@@ -17,6 +17,6 @@
     "esbuild": "esbuild --bundle src/runtime-inject.ts --outfile=dist/runtime-inject.js --alias:path=path-browserify"
   },
   "devDependencies": {
-    "esbuild": "^0.19.10"
+    "esbuild": "^0.19.11"
   }
 }

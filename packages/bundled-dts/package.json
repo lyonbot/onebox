@@ -11,7 +11,7 @@
   "devDependencies": {
     "@types/crypto-js": "^4.2.1",
     "@types/lodash": "^4.14.202",
-    "@types/node": "^18.19.3"
+    "@types/node": "^18.19.4"
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.9"
