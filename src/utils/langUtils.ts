@@ -15,12 +15,8 @@ export function guessLangFromName(filename: string, fallback = Lang.UNKNOWN): La
 export function guessLangFromContent(str: string): Lang {
   str = str.trim();
 
-  if (/^.{0,10}['"]/.test(str)) {
-    // earlier than json
-    return Lang.STRING_LITERAL;
-  }
-
-  if (/^#{1,6} .+\n\n/.test(str) || /^(- |\d+\. |```\w*$)/m.test(str)) {
+  if (/^#{1,6} .+\n\n/.test(str) || /^(- |\d+\. |```\w*$)|\[[^\]\n]*\]\([^)\n]+\)$/m.test(str)) {
+    // markdown: detecting by heading, list, code block, link at end of line
     return Lang.MARKDOWN;
   }
 
@@ -58,7 +54,7 @@ export function guessLangFromContent(str: string): Lang {
     return Lang.JSON;
   }
 
-  if (/\b(function|var |let |const |=>|return)\b/.test(str)) {
+  if (/\b(function|var |let |const |=>|return)\b/.test(str) || /^print\(/m.test(str)) {
     if (/^(type|interface)\b\w|[\w=]\s*\(\w+\s*:/m.test(str)) return Lang.TYPESCRIPT;
     return Lang.JAVASCRIPT;
   }
@@ -69,6 +65,11 @@ export function guessLangFromContent(str: string): Lang {
 
   if (/%[A-Fa-f0-9]{2}/.test(str)) {
     return Lang.URLENCODED;
+  }
+
+  if (/^.{0,10}['"]/.test(str)) {
+    // earlier than json
+    return Lang.STRING_LITERAL;
   }
 
   return Lang.UNKNOWN;

@@ -12,7 +12,6 @@ import { runAndKeepCursor } from '~/monaco/utils';
 import { VTextFileController } from '~/store/files';
 import { getSearchMatcher } from 'yon-utils';
 import { installedPlugins } from '~/plugins';
-import { createQuickActionsMemo } from '~/actions';
 
 export default function EditorMonacoPanel(props: { file: VTextFileController, panelId: string }) {
   const oneBox = useOneBox()
@@ -31,9 +30,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
   onCleanup(() => oneBox.panels.update('activeMonacoEditor', prev => (prev === editor) ? undefined : prev))
 
   const rename = () => {
-    runAndKeepCursor(() => editor, async () => {
-      await oneBox.api.interactiveRenameFile(file.filename)
-    })
+    oneBox.api.interactiveRenameFile(file.filename)
   };
 
   const removePanel = () => {
@@ -52,7 +49,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
   }
 
   const setLangKeepCursor = (lang: Lang) => {
-    runAndKeepCursor(() => editor, () => file.setLang(lang, true));
+    runAndKeepCursor(() => editor, () => file.setLang(lang));
   }
 
   watch(hasFocus, f => f && onCleanup(oneBox.ui.api.addActionHint(<>
@@ -84,8 +81,6 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
 
   // #endregion
 
-  const actionsFromPlugins = createQuickActionsMemo(oneBox, file.filename)
-
   return (
     <div class="flex flex-col h-full">
       <div class="ob-panel-toolbar">
@@ -101,8 +96,8 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
           </button>
         </Show>
 
-        <For each={actionsFromPlugins()}>
-          {list => <For each={list()}>
+        <For each={installedPlugins()}>
+          {plugin => plugin.getQuickActions && <For each={Array.from(plugin.getQuickActions(file))}>
             {action => <button class="ob-panel-toolbarBtn" onClick={() => void action.run()}>
               {action.label?.() || action.value}
             </button>}
@@ -122,7 +117,7 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
           </>)}
         >
           <i class='i-mdi-rocket' />
-          Actions
+          Action
         </button>
       </div>
 

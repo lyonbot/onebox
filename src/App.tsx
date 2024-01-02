@@ -1,5 +1,5 @@
 /* @refresh granular */
-import _ from 'lodash'
+import _, { sortBy } from 'lodash'
 import * as monaco from 'monaco-editor';
 import { basename, dirname, join, relative } from "path";
 import { Show, batch, createSignal, onMount } from "solid-js";
@@ -16,6 +16,7 @@ import { setupMonacoEnv } from "./monaco";
 import { installPlugin } from "./plugins";
 import { addListener } from './utils/solid';
 import { OneBoxDependenciesPlugin } from './builtin-plugins/dependencies';
+import { Lang } from './utils/lang';
 
 const global = window as any
 global.monaco = monaco
@@ -145,7 +146,6 @@ export default function App() {
       ref={div => {
         let dragBug = 0 // dnd api bug? after first hit, (dragenter and dragleave) fire alternately
         let dragFromSelf = false
-        const willDropFile = false
 
         addListener(div, 'dragstart', ev => {
           dragFromSelf = true
@@ -244,10 +244,26 @@ export default function App() {
 
     async function pushFile([name, file]: [string, File]) {
       const isTextFile = file.type.startsWith('text/') || file.type.includes('/json');
+      const contentBinary = !isTextFile && Buffer.from(await file.arrayBuffer());
+
+      // find same binary file in current project
+      // avoid repeated importing
+      const duplicatedBinaryFile = contentBinary && sortBy(
+        oneBox.files.state.files.filter(f => (
+          f.contentBinary && // is binary file
+          f.ctime === f.mtime && // not modified since imported
+          dirname(f.filename) === baseDir && // in same dir
+          f.contentBinary.equals(contentBinary) // same binary content
+        )),
+        f => f.ctime
+      )[0]
+      if (duplicatedBinaryFile) return duplicatedBinaryFile
+
+      // else, create new file
       return (oneBox.files.api.createFile({
         filename: join(baseDir, name),
         content: isTextFile ? await file.text() : '',
-        contentBinary: !isTextFile && Buffer.from(await file.arrayBuffer()),
+        contentBinary,
         lang: guessLangFromName(name),
       }));
     }
@@ -258,8 +274,10 @@ export default function App() {
     if (!dataTransfer) return
     if (dataTransfer.types.includes('text/x-ob-dnd-ignore')) return
 
-    const isDropToMonaco = !!(ev.target as HTMLElement)?.matches('.monaco-scrollable-element *')
-    const isDropToRegularEditor = !isDropToMonaco && !!(ev.target as HTMLElement)?.matches?.('textarea, input, [contenteditable], [contenteditable] *')
+    const target = ev.target as HTMLElement
+
+    const isDropToMonaco = !!target && (target.matches('.monaco-scrollable-element *') || target.className.includes('monaco'))
+    const isDropToRegularEditor = !isDropToMonaco && !!target.matches?.('textarea, input, [contenteditable], [contenteditable] *')
     const isNotDraggingFile = !dataTransfer.types.includes('Files')
     if ((isNotDraggingFile && isDropToMonaco) || isDropToRegularEditor) return
 
@@ -278,7 +296,7 @@ export default function App() {
         if (editor && file) {
           // paste the urls into file
           let convert = (filename: string) => filename
-          if (file.lang === 'markdown') {
+          if (file.lang === Lang.UNKNOWN || file.lang === Lang.MARKDOWN) {
             convert = filename => {
               let url = relative(dirname(file.filename), filename)
               if (!url.startsWith('.')) url = `./${url}`
@@ -297,6 +315,11 @@ export default function App() {
             range: editor.getSelection()!,
             text,
           }])
+
+          // for unknown text, if we pasted a image, treat it as Markdown?
+          if (file.lang === Lang.UNKNOWN) {
+            setTimeout(() => file.setLang(Lang.MARKDOWN), 100)
+          }
         } else {
           // open first 3 files
           imported.slice(0, 3).forEach(file => {

@@ -7,15 +7,18 @@ import { watch } from '~/utils/solid'
 import { setObFactory } from './runtime-api'
 import { setupMonacoTsLibs } from './setupMonacoTsLibs'
 import { makeObFactory } from './makeObFactory'
+import { basename } from 'path'
+
+export type RunScriptPanelData = {
+  randomKey: string // change this to re-run
+  mode?: 'refreshing' | 'incremental'
+  showHTMLPreview?: boolean
+  htmlPreviewHeight?: number // percentage 0-100
+}
 
 declare module "~/plugins" {
   export interface OneBoxPanelData {
-    runScript?: {
-      randomKey: string // change this to re-run
-      mode?: 'refreshing' | 'incremental'
-      showHTMLPreview?: boolean
-      htmlPreviewHeight?: number // percentage 0-100
-    }
+    runScript?: RunScriptPanelData
   }
 }
 
@@ -52,10 +55,12 @@ const panelId = 'onebox-run-script:panel'
 
 const oneBoxRunScript: OneBoxPlugin = oneBox => {
   function runScript(file: VTextFileController) {
-    const panelExists = getExistingRunnerPanelId(file)
+    const panelExists = getExistingRunnerPanel()
 
     if (panelExists) {
-      oneBox.panels.api.updatePanel(panelId)('runScript', 'randomKey', 'S' + Math.random())
+      oneBox.panels.api.updatePanel(panelId)('runScript', {
+        randomKey: 'S' + Math.random(),
+      })
     } else {
       if (!langs.has(file.lang)) return
       oneBox.panels.api.openPanel({
@@ -82,30 +87,28 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       'onebox-run-script': () => import('./panel'),
     },
     async *getActions(file) {
-      const alreadyRan = !!getExistingRunnerPanelId(file)
-      const langMatch = langs.has(file.lang)
-      if (!alreadyRan && !langMatch) return
+      const existing = getExistingRunnerPanel()
+      const displayData = getRunButtonDisplayData(file, existing)
+      if (!displayData) return
 
       yield {
-        label: () => <div><i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : mlLangs.has(file.lang) ? 'Send to DevTool' : 'Run'} Script</div>,
+        label: () => <div><i class="i-mdi-play"> </i> {displayData.text} </div>,
         value: 'rerun run script',
         run: () => runScript(file),
       }
     },
     *getQuickActions(file) {
-      const alreadyRan = !!getExistingRunnerPanelId(file)
-      const langMatch = langs.has(file.lang)
-      if (!alreadyRan && !langMatch) return
+      const existing = getExistingRunnerPanel()
+      const displayData = getRunButtonDisplayData(file, existing)
+      if (!displayData) return
 
       yield {
-        label: () => <div onMouseEnter={oneBox.ui.api.getActionHintEvFor(<div class='ob-status-actionHint'><kbd>F5</kbd>Run</div>)}>
-          <i class="i-mdi-play"> </i> {alreadyRan ? 'Re-run' : mlLangs.has(file.lang) ? 'Send to DevTool' : 'Run'}
-        </div>,
+        label: () => <div><i class="i-mdi-play"> </i> {displayData.text} </div>,
         value: 'rerun run script',
         run: () => runScript(file),
       }
 
-      if (langMatch && (!mlLangs.has(file.lang) || alreadyRan))
+      if (displayData.showLibraries)
         yield {
           label: () => <div><i class="i-mdi-library"> </i> Libraries</div>,
           value: 'show libraries',
@@ -127,17 +130,13 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
       })
 
       // add action to context menu
-      watch(() => (
-        (langs.has(file.lang) ? 1 : 0) +
-        (getExistingRunnerPanelId(file) ? 2 : 0)
-      ), flag => {
-        if (flag === 0) return // mismatch language, and no panel running
+      watch(() => getRunButtonDisplayData(file), displayData => {
+        if (!displayData) return
 
         const id = 'oneBox:runScript'
-        const alreadyRan = !!(flag & 2)
         const action = editor.addAction({
           id,
-          label: `OneBox: ${alreadyRan ? 'Re-run' : 'Run'} Script`,
+          label: `OneBox: ${displayData.text}`,
           run: () => runScript(file),
           keybindings: [monaco.KeyCode.F5],
           contextMenuGroupId: 'navigation',
@@ -150,14 +149,24 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
     },
   })
 
-  function getExistingRunnerPanelId(file: VTextFileController) {
+  function getExistingRunnerPanel() {
     const panel = oneBox.panels.state.panels.find(p => p.id === panelId)
-    if (!panel) return null
+    return panel
+  }
 
-    if (panel.filename !== file.filename) {
-      console.warn('onebox-run-script: panel filename mismatch', panel.filename, file.filename)
-    }
-    return panel.id
+  function getRunButtonDisplayData(file: VTextFileController, existing = getExistingRunnerPanel()) {
+    // hide run button if not supported language and nothing running
+    if (!existing && !langs.has(file.lang)) return null
+
+    const runningCurrentFile = existing && existing.filename === file.filename
+    const runningOtherFile = existing && !runningCurrentFile
+
+    const showLibraries = existing ? runningCurrentFile : !mlLangs.has(file.lang)
+    const text = existing
+      ? `Re-run${runningCurrentFile ? '' : ` (${basename(existing.filename)})`}`
+      : mlLangs.has(file.lang) ? 'Send to DevTool' : 'Run'
+
+    return { text, showLibraries, runningCurrentFile, runningOtherFile }
   }
 }
 

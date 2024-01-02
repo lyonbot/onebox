@@ -19,6 +19,8 @@ export interface VTextFile {
   /** if presents, the `content` will be meaningless */
   contentBinary?: Buffer | false
   lang: Lang
+  mtime: number
+  ctime: number
 }
 
 export interface VTextFileDependency {
@@ -31,6 +33,8 @@ export interface VTextFileController {
   readonly content: string
   readonly contentBinary?: Buffer | false
   readonly lang: Lang
+  readonly mtime: number
+  readonly ctime: number
 
   readonly model: monaco.editor.ITextModel
   readonly objectURL: string
@@ -40,7 +44,7 @@ export interface VTextFileController {
 
   setFilename(filename: string): string
   setContent(content: string): void
-  setLang(lang: Lang, updateExtname?: boolean): void
+  setLang(lang: Lang, keepFilename?: boolean): void
   setContentBinary(content: Buffer | false): void
   notifyBinaryContentChanged(): void
 
@@ -74,7 +78,12 @@ export function createFilesStore(root: () => OneBox) {
   const fileControllers = mapArray(
     () => state.files,
     (file, index) => {
-      const updateFile: SetStoreFunction<VTextFile> = (...args: any[]) => update('files', index(), ...args as [any])
+      const updateFile: SetStoreFunction<VTextFile> = (...args: any[]) => {
+        batch(() => {
+          update('files', index(), ...args as [any])
+          update('files', index(), 'mtime', Date.now())
+        })
+      }
 
       // ---------------------------------------
       // monaco model
@@ -163,11 +172,14 @@ export function createFilesStore(root: () => OneBox) {
         setContentBinary(value: Buffer | false) { updateFile('contentBinary', value) },
         notifyBinaryContentChanged() { updateFile('contentBinary', (b) => (b as Buffer).subarray()) }, // make a different wrapper to same memory
 
+        get mtime() { return file.mtime },
+        get ctime() { return file.ctime },
+
         get lang() { return file.lang },
-        setLang(lang, updateExtname) {
+        setLang(lang, keepFilename) {
           updateFile('lang', lang)
 
-          if (updateExtname) {
+          if (!keepFilename) {
             const description = LangDescriptions[lang];
             const ext = description.extname || '.txt';
             this.setFilename(this.filename.replace(/(\.\w+)?$/, ext))
@@ -242,11 +254,14 @@ export function createFilesStore(root: () => OneBox) {
     nonConflictFilename,
     createFile(desc: Partial<VTextFile>) {
       const filename = nonConflictFilename(desc.filename || 'untitled.txt')
+      const now = Date.now();
       const f: VTextFile = {
         content: '',
         ...desc,
         filename,
         lang: desc.lang || guessLangFromName(filename),
+        mtime: now,
+        ctime: now,
       }
       update('files', files => sortFilesByName([...files, f]))
       return fileModelsLUT()[filename].controller

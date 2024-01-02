@@ -64,7 +64,7 @@ export function Sidebar(props: { id: string }) {
         {file => {
           let div!: HTMLDivElement
           const isActive = createMemo(() => file.filename === activeFile()?.filename)
-          const isOpened = createMemo(() => oneBox.panels.state.panels.find(p => p.filename === file.filename))
+          const isOpened = createMemo(() => oneBox.panels.state.panels.find(p => !p.panelType && p.filename === file.filename))
           watch(isActive, e => e && div.scrollIntoView({ block: 'nearest' }), true)
 
           return <div

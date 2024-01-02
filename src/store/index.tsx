@@ -12,6 +12,7 @@ import { Lang, LangDescriptions } from '~/utils/lang'
 import { Buffer } from "buffer";
 import { Nil, getSearchMatcher } from 'yon-utils'
 import { guessLangFromContent } from '~/utils/langUtils'
+import { runAndKeepCursor } from '~/monaco/utils'
 
 export type OneBox = ReturnType<typeof createOneBoxStore>
 
@@ -23,6 +24,8 @@ export interface ExportedProjectData {
     content: string
     contentBinary?: string | false // base64
     lang: string
+    mtime: number
+    ctime: number
   }[]
   showSidebar?: boolean
   dockview?: any // layout json
@@ -98,7 +101,7 @@ function createOneBoxStore() {
       return file
     },
     openFile(filename: string, forceNewPanel?: false | 'within' | 'left' | 'right' | 'above' | 'below') {
-      const existingPanel = !forceNewPanel && panels.state.panels.find(p => p.filename === filename)
+      const existingPanel = !forceNewPanel && panels.state.panels.find(p => !p.panelType && p.filename === filename)
       if (!existingPanel) {
         panels.api.openPanel({ filename }, forceNewPanel || 'within')
       } else {
@@ -118,8 +121,12 @@ function createOneBoxStore() {
         is: 'oneBox:projectData',
         title: title(),
         files: files.state.files.map(f => ({
-          ...f,
+          filename: f.filename,
+          content: f.content,
           contentBinary: f.contentBinary && Buffer.from(f.contentBinary).toString('base64'),
+          lang: f.lang,
+          mtime: f.mtime,
+          ctime: f.ctime,
         })),
         showSidebar: ui.state.showSidebar,
         dockview: cloneDeepWith(panels.state.dockview?.toJSON(), (value) => {
@@ -173,26 +180,28 @@ function createOneBoxStore() {
       const file = files.api.getControllerOf(filename)
       if (!file) return
 
-      const newName = await ui.api.prompt(
-        'Rename current file to', {
-        default: filename,
-        onMount(ev) {
-          if (ev.inputBox.selectionEnd) {
-            ev.inputBox.selectionStart = filename.lastIndexOf('/') + 1
-            ev.inputBox.selectionEnd -= extname(filename).length
-          }
-        },
-        enumOptions(input) {
-          if (input && !isValidFilename(input)) return [
-            { value: '', label: () => <span class='text-red-6'><i class="i-mdi-close"></i> Invalid Filename</span> },
-          ]
-        },
-      })
-      if (!newName) return
+      runAndKeepCursor(() => panels.state.activeMonacoEditor, async () => {
+        const newName = await ui.api.prompt(
+          'Rename current file to', {
+          default: filename,
+          onMount(ev) {
+            if (ev.inputBox.selectionEnd) {
+              ev.inputBox.selectionStart = filename.lastIndexOf('/') + 1
+              ev.inputBox.selectionEnd -= extname(filename).length
+            }
+          },
+          enumOptions(input) {
+            if (input && !isValidFilename(input)) return [
+              { value: '', label: () => <span class='text-red-6'><i class="i-mdi-close"></i> Invalid Filename</span> },
+            ]
+          },
+        })
+        if (!newName) return
 
-      file.setFilename(newName)
+        file.setFilename(newName)
+      })
     },
-    async interactiveSummonAction(filename: string | Nil) {
+    interactiveSummonAction: (filename: string | Nil) => runAndKeepCursor(() => panels.state.activeMonacoEditor, async () => {
       const file = files.api.getControllerOf(filename)
       if (!file) return
 
@@ -205,20 +214,19 @@ function createOneBoxStore() {
           label: () => <div><i class="i-mdi-thought-bubble"></i> Switch to <b class='text-green-7'>{desc.name}</b> Language</div>,
           value: 'switch to set guessed language',
           run() {
-            file.setLang(guessTo, true)
+            file.setLang(guessTo)
           },
         })
       }
 
-      ui.api.prompt("Action", {
+      const actionId = await ui.api.prompt("Action", {
         enumOptions(input) {
           return getSearchMatcher(input).filter(actions)
         },
-      }).then(value => {
-        const action = actions.find(a => a.value === value)
-        if (action) action.run()
       })
-    },
+      const action = actions.find(a => a.value === actionId)
+      if (action) await action.run()
+    }),
 
     async downloadCurrentFile() {
       const currentFilename = api.getCurrentFilename()
