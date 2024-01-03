@@ -104,14 +104,12 @@ const oneBoxRunScript: OneBoxPlugin = oneBox => {
 
       yield {
         label: () => <div><i class="i-mdi-play"> </i> {displayData.text} </div>,
-        value: 'rerun run script',
         run: () => runScript(file),
       }
 
       if (displayData.showLibraries)
         yield {
           label: () => <div><i class="i-mdi-library"> </i> Libraries</div>,
-          value: 'show libraries',
           run: () => {
             alert(libraryHelpMessage)
           },

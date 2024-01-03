@@ -27,7 +27,6 @@ const oneBoxMarkdown: OneBoxPlugin = oneBox => {
 
       yield {
         label: () => <div><i class="i-mdi-markdown"> </i> Preview</div>,
-        value: 'preview markdown',
         run: () => preview(file.filename),
       }
     },

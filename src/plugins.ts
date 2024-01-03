@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import type * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { Accessor, createSignal, type JSXElement } from "solid-js";
+import { Accessor, createSignal, JSX, type JSXElement } from "solid-js";
 import type { Fn, Nil } from "yon-utils";
 import type { OneBox } from "./store";
 import type { VTextFileController } from "./store/files";
@@ -14,6 +14,12 @@ export type OneBoxAction = {
   run: Fn
 }
 
+export type OneBoxQuickAction = {
+  label?: () => JSXElement
+  element?: () => JSXElement // if set, `label` and `run` will be ignored
+  run: Fn
+}
+
 export interface OneBoxPanelData {
   // TODO: plugins may extends this with [TypeScript Declaration Merging](https://www.typescriptlang.org/docs/handbook/declaration-merging.html)
 }
@@ -22,7 +28,7 @@ export interface OneBoxPluginDeclaration {
   name: string
   panels?: Record<string, () => Promise<any>>
   getActions?: (file: VTextFileController) => AsyncIterableIterator<OneBoxAction>
-  getQuickActions?: (file: VTextFileController) => Iterable<OneBoxAction>
+  getQuickActions?: (file: VTextFileController) => Iterable<OneBoxQuickAction>
   setupMonacoEditor?: (ctx: { file: VTextFileController, panelId: string, editor: monaco.editor.IStandaloneCodeEditor }) => void
 
   /** returns an Accessor to the list of a file's dependencies. You can use createMemo inside */

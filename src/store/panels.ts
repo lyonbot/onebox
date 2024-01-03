@@ -1,10 +1,13 @@
 import { DockviewComponent, DockviewPanelApi } from "dockview-core"
+import { LocalSelectionTransfer, PanelTransfer } from "dockview-core";
 import { batch, createEffect, mapArray, onCleanup } from "solid-js"
 import { SetStoreFunction, createStore } from "solid-js/store"
-import { addListener, watch } from "~/utils/solid"
+import { addListener, nextTick, watch } from "~/utils/solid"
 import { uniqueId } from "lodash"
 import type * as monaco from 'monaco-editor'
 import { OneBoxPanelData } from "~/plugins"
+import { FAKE_PANEL_COMPONENT } from "~/panels/adaptor"
+import { basename } from "path";
 
 export type PanelsStore = ReturnType<typeof createPanelsStore>
 
@@ -24,7 +27,7 @@ export function createPanelsStore(/*root: () => OneBox*/) {
     activePanelId: '',
     get activePanel() { return state.panels.find(x => x.id === this.activePanelId) },
 
-    isDraggingPanel: false,
+    isDraggingPanel: false as false | { groupId: string } | { panelId: string } | { toOpenFile: string },
     dockview: null as unknown as DockviewComponent,
     activeMonacoEditor: undefined as undefined | monaco.editor.IStandaloneCodeEditor,
   })
@@ -33,9 +36,51 @@ export function createPanelsStore(/*root: () => OneBox*/) {
   watch(() => state.isDraggingPanel, (dragging) => {
     if (!dragging) return
 
-    const listener = () => update('isDraggingPanel', false)
-    addListener(window, 'dragend', listener,)
-    addListener(window, 'drop', listener,)
+    if ('toOpenFile' in dragging) {
+      const filename = dragging.toOpenFile
+      const dockview = state.dockview
+
+      const panelTransfer = LocalSelectionTransfer.getInstance<PanelTransfer>()
+      const fakePanel = dockview.addPanel({
+        floating: { x: 0, y: -10, width: 0, height: 0 },
+        id: `dnd-fake-${Date.now()}`,
+        component: FAKE_PANEL_COMPONENT,
+        title: basename(filename),
+      })
+      const floatingGroupId = fakePanel.group.id
+      panelTransfer.setData(
+        [new PanelTransfer(dockview.id, fakePanel.group.id, fakePanel.id)],
+        PanelTransfer.prototype,
+      )
+
+      let dropped = false
+      addListener(window, 'drop', () => (dropped = true), true)
+
+      onCleanup(() => {
+        panelTransfer.clearData(PanelTransfer.prototype);
+        if (!dropped || (fakePanel.group?.id === floatingGroupId && fakePanel.group.model.isFloating)) {
+          // aborted dropping panel. remove fake panel
+          dockview.removePanel(fakePanel)
+        }
+
+        // dropping. open it
+        const panelId = api.openPanel({ filename }, 'within')
+        const movingTo = {
+          group: fakePanel.group,
+          index: fakePanel.group.model.panels.indexOf(fakePanel),
+        };
+
+        nextTick(() => {
+          const panel = dockview.getGroupPanel(panelId)
+          panel?.api.moveTo(movingTo)
+          dockview.removePanel(fakePanel)
+        })
+      })
+
+      return
+    }
+
+    addListener(window, 'dragend', () => update('isDraggingPanel', false))
   })
 
   const api = {
@@ -79,15 +124,22 @@ export function createPanelsStore(/*root: () => OneBox*/) {
     setupDockview(dockview: DockviewComponent) {
       update('dockview', dockview)
 
-      dockview.onWillDragGroup(() => update('isDraggingPanel', true))
-      dockview.onWillDragPanel(() => update('isDraggingPanel', true))
+      dockview.onWillDragGroup((ev) => update('isDraggingPanel', { groupId: ev.group.id }))
+      dockview.onWillDragPanel((ev) => update('isDraggingPanel', { panelId: ev.panel.id }))
 
       // sync panel's creating and removing
       dockview.onDidAddPanel(panel => {
-        if (state.panels.some(x => x.id === panel.id)) return
-        update('panels', x => [...x, { id: panel.id, ...panel.params as any }])
+        if (panel.view.contentComponent === FAKE_PANEL_COMPONENT) return
+
+        // in case the panel is created by dockview itself, or importing (which handled by dockview too)
+        update('panels', arr => {
+          if (state.panels.some(x => x.id === panel.id)) return arr;
+          return [...arr, { id: panel.id, ...panel.params as any }]
+        })
       })
       dockview.onDidRemovePanel(panel => {
+        if (panel.view.contentComponent === FAKE_PANEL_COMPONENT) return
+
         update('panels', panels => panels.filter(x => x.id !== panel.id))
       })
       createEffect(mapArray(

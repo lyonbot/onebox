@@ -14,7 +14,7 @@ fs.readdirSync(dir).forEach((file) => {
   const name = file.replace(/\.svg$/, '')
   const txt = fs.readFileSync(`${dir}/${file}`, 'utf8')
   const body = txt.slice(txt.indexOf('>') + 1, txt.indexOf('</svg>'))
-    .replace(/fill="#000+"/g, 'fill="currentColor"')
+    .replace(/="(#000+|black)"/g, '="currentColor"')
 
   icons[name] = { body }
 })

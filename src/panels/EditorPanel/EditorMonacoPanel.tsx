@@ -98,9 +98,10 @@ export default function EditorMonacoPanel(props: { file: VTextFileController, pa
 
         <For each={installedPlugins()}>
           {plugin => plugin.getQuickActions && <For each={Array.from(plugin.getQuickActions(file))}>
-            {action => <button class="ob-panel-toolbarBtn" onClick={() => void action.run()}>
-              {action.label?.() || action.value}
-            </button>}
+            {action => action.element
+              ? <>{action.element()}</>
+              : <button class="ob-panel-toolbarBtn" onClick={() => void action.run()}>{action.label?.()}</button>
+            }
           </For>}
         </For>
 

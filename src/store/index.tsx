@@ -1,11 +1,11 @@
 import JSZip from 'jszip'
 import localForage from 'localforage'
 import { extname } from 'path'
-import { batch, createEffect, createRoot, createSignal, getOwner, mapArray, untrack } from 'solid-js'
+import { batch, createEffect, createRoot, createSignal, getOwner, mapArray, onCleanup, untrack } from 'solid-js'
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
-import { addListener, watch } from '~/utils/solid'
+import { addListener, nextTick, watch } from '~/utils/solid'
 import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
 import { downloadFile, isValidFilename } from '~/utils/files'
 import { Lang, LangDescriptions } from '~/utils/lang'
@@ -55,6 +55,10 @@ function createOneBoxStore() {
   const autoSaveDebounceTime = 2000
   const unsetIsImporting = debounce(() => isImporting = false, autoSaveDebounceTime + 100, { leading: false, trailing: true })
   const setIsImporting = () => { isImporting = true; unsetIsImporting(); api.saveLastProject.cancel() }
+  const saveLastProjectNow = debounce(() => {
+    api.saveLastProject()
+    api.saveLastProject.flush()
+  }, 10, {leading:false, trailing:true})
   watch(() => panels.state.dockview, dockview => {
     if (!dockview) return
 
@@ -65,7 +69,8 @@ function createOneBoxStore() {
     addListener(document, 'visibilitychange', flushSave)
 
     // watch dockview's modifications
-    dockview.onDidLayoutChange(debounce(api.saveLastProject, 100, { leading: false, trailing: true }))
+    const queueSave2 = debounce(api.saveLastProject, 100, { leading: false, trailing: true })
+    dockview.onDidLayoutChange(() => !panels.state.isDraggingPanel && queueSave2())
 
     // watch file's modifications
     createEffect(mapArray(() => files.state.files, file => {
@@ -73,11 +78,16 @@ function createOneBoxStore() {
         file.content;
         file.contentBinary;
         file.lang;
-        file.filename;
 
         // update when one of them updated
         untrack(() => api.saveLastProject())
       })
+
+      // in some case we must save immediately
+      saveLastProjectNow()
+      watch(() => file.filename, saveLastProjectNow)
+      watch(() => file.lang, saveLastProjectNow)
+      onCleanup(saveLastProjectNow) // file deleted
     }))
 
     // load last project
@@ -156,9 +166,9 @@ function createOneBoxStore() {
         ui.update({ showSidebar: data.showSidebar })
       })
       if (data.dockview) {
-        setTimeout(() => {
+        nextTick(() => {
           panels.state.dockview.fromJSON(cloneDeep(data.dockview))
-        }, 100)
+        })
       }
     },
     saveLastProject: debounce(async () => {

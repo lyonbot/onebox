@@ -77,7 +77,11 @@ export function Sidebar(props: { id: string }) {
             draggable="true"
             onDragStart={ev => {
               ev.dataTransfer!.setData('text/plain', file.filename)
-              ev.dataTransfer!.setData('text/x-ob-dnd-ignore', 'true')
+              ev.dataTransfer!.setData('text/onebox-sidebar-filename', file.filename)
+              oneBox.panels.update('isDraggingPanel', () => ({ toOpenFile: file.filename }))
+            }}
+            onDragEnd={() => {
+              oneBox.panels.update('isDraggingPanel', false)
             }}
             onMouseDown={ev => {
               if (ev.button === 1) {

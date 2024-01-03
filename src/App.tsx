@@ -272,7 +272,6 @@ export default function App() {
   /** including paste, drop */
   function handleIncomingDataTransferEvent(ev: Event, dataTransfer: DataTransfer | Nil) {
     if (!dataTransfer) return
-    if (dataTransfer.types.includes('text/x-ob-dnd-ignore')) return
 
     const target = ev.target as HTMLElement
 

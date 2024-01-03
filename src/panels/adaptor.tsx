@@ -1,11 +1,14 @@
 import { DockviewPanelApi, GroupPanelContentPartInitParameters, GroupPanelPartInitParameters, IContentRenderer, ITabRenderer } from "dockview-core";
 import { JSX, createEffect, createMemo, createSignal, getOwner, lazy, runWithOwner } from "solid-js";
 import { Portal } from "solid-js/web";
-import { OneBox } from "~/store";
-import { UIPanel } from "~/store/panels";
+import type { OneBox } from "~/store";
+import type { UIPanel } from "~/store/panels";
 import { modKey } from "yon-utils";
 import { SetStoreFunction } from "solid-js/store";
 import { getPanelSolidComponent } from "./panels";
+
+/** a panel component id for dnd placeholder */
+export const FAKE_PANEL_COMPONENT = 'fake-panel-component'
 
 export interface AdaptedPanelProps {
   id: string;
@@ -172,7 +175,15 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
     }
   }
 
-  return { DockviewContentAdaptor, DockviewTabAdaptor }
+  class FakePanelComponent implements IContentRenderer {
+    element = document.createElement('div')
+
+    init() { }
+    update() { }
+    dispose() { }
+  }
+
+  return { DockviewContentAdaptor, DockviewTabAdaptor, FakePanelComponent }
 }
 
 export function simpleRendererAdaptor(render: (props: { params: any }) => JSX.Element, owner = getOwner()) {
