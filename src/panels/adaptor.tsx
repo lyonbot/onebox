@@ -121,6 +121,8 @@ export function getDockviewAdaptor(oneBox: OneBox, owner = getOwner()) {
                   closePanel()
                   return
                 }
+              }}
+              onClick={ev => {
                 if (modKey(ev) === modKey.Mod) {
                   copyPanel('right')
                   return
