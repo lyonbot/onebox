@@ -45,6 +45,10 @@ select:not(:disabled) {
       filter: invert(1) brightness(1.15) hue-rotate(180deg);
     }
   }
+
+  .markdown-body {
+    font-size: 14px; // a little bigger than root
+  }
 }
 
 #ob-sidebar {
