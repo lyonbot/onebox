@@ -162,7 +162,6 @@ export function Sidebar(props: { id: string }) {
         e.preventDefault();
         if (confirm('All files will be gone. Are you sure?')) {
           oneBox.api.resetProject()
-          oneBox.api.saveLastProject()
         }
       }}
         onMouseEnter={oneBox.ui.api.getActionHintEvFor(<span class="text-red-2"><kbd><i class='i-ob-mouse-left' /></kbd> Reset Project (delete all files!)</span>)}

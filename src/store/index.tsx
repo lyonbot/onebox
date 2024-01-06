@@ -1,18 +1,18 @@
 import JSZip from 'jszip'
-import localForage from 'localforage'
 import { extname } from 'path'
-import { batch, createEffect, createRoot, createSignal, getOwner, mapArray, onCleanup, untrack } from 'solid-js'
+import { batch, createRoot, createSignal, getOwner } from 'solid-js'
 import { VTextFile, createFilesStore } from './files'
 import { createPanelsStore } from './panels'
 import { createUIStore } from './ui'
-import { addListener, nextTick, watch } from '~/utils/solid'
-import { cloneDeep, cloneDeepWith, debounce } from 'lodash'
+import { nextTick, watch } from '~/utils/solid'
+import { cloneDeep, cloneDeepWith } from 'lodash'
 import { downloadFile, isValidFilename } from '~/utils/files'
 import { Lang, LangDescriptions } from '~/utils/lang'
 import { Buffer } from "buffer";
 import { Nil, getSearchMatcher } from 'yon-utils'
 import { guessLangFromContent } from '~/utils/langUtils'
 import { runAndKeepCursor } from '~/monaco/utils'
+import { LocalSync, setupLocalSync } from './local-sync'
 
 export type OneBox = ReturnType<typeof createOneBoxStore>
 
@@ -39,8 +39,6 @@ const emptyProjectData: Required<ExportedProjectData> = {
   dockview: null,
 }
 
-const LS_LAST_PROJECT_DATA = 'oneBox:lastProjectData'
-
 function createOneBoxStore() {
   const getRoot: () => OneBox = () => root
   const owner = getOwner()
@@ -49,50 +47,6 @@ function createOneBoxStore() {
   const files = createFilesStore(getRoot)
   const panels = createPanelsStore(/* getRoot */)
   const ui = createUIStore()
-
-  // some logic about auto-save current project
-  let isImporting = false;
-  const autoSaveDebounceTime = 2000
-  const unsetIsImporting = debounce(() => isImporting = false, autoSaveDebounceTime + 100, { leading: false, trailing: true })
-  const setIsImporting = () => { isImporting = true; unsetIsImporting(); api.saveLastProject.cancel() }
-  const saveLastProjectNow = debounce(() => {
-    api.saveLastProject()
-    api.saveLastProject.flush()
-  }, 10, {leading:false, trailing:true})
-  watch(() => panels.state.dockview, dockview => {
-    if (!dockview) return
-
-    // update cache when window lost focus, or mouse leave the whole window
-    const flushSave = () => api.saveLastProject.flush()
-    addListener(document.body, 'focusout', flushSave)
-    addListener(document.documentElement, 'mouseleave', flushSave)
-    addListener(document, 'visibilitychange', flushSave)
-
-    // watch dockview's modifications
-    const queueSave2 = debounce(api.saveLastProject, 100, { leading: false, trailing: true })
-    dockview.onDidLayoutChange(() => !panels.state.isDraggingPanel && queueSave2())
-
-    // watch file's modifications
-    createEffect(mapArray(() => files.state.files, file => {
-      createEffect(() => {
-        file.content;
-        file.contentBinary;
-        file.lang;
-
-        // update when one of them updated
-        untrack(() => api.saveLastProject())
-      })
-
-      // in some case we must save immediately
-      saveLastProjectNow()
-      watch(() => file.filename, saveLastProjectNow)
-      watch(() => file.lang, saveLastProjectNow)
-      onCleanup(saveLastProjectNow) // file deleted
-    }))
-
-    // load last project
-    setTimeout(api.loadLastProject, 20) // avoid floating group losing position (due to dockview's size not ready)
-  })
 
   const api = {
     getCurrentFilename() {
@@ -120,11 +74,15 @@ function createOneBoxStore() {
       }
     },
     resetProject() {
+      localSync?.setSavingEnabled(false)
+
       panels.state.dockview.clear()
       panels.update({ panels: [], activePanelId: '' })
       files.update({ files: [] })
       ui.update({ showSidebar: true })
       setTitle('OneBox Project')
+
+      localSync?.setSavingEnabled(true)
     },
     exportProject() {
       const data: ExportedProjectData = {
@@ -147,41 +105,32 @@ function createOneBoxStore() {
     },
     importProject(incoming: ExportedProjectData) {
       if (!incoming || incoming.is !== 'oneBox:projectData') return
-      setIsImporting()
 
-      // first of all, close all panels
-      api.resetProject()
+      try {
+        const data = { ...emptyProjectData, ...incoming }
+        batch(() => {
+          api.resetProject()
 
-      // then import files and open panels
-      const data = { ...emptyProjectData, ...incoming }
-      batch(() => {
-        setTitle(data.title)
-        files.update('files', data.files.map((raw): VTextFile => {
-          return {
-            ...raw,
-            lang: raw.lang as Lang || Lang.UNKNOWN,
-            contentBinary: !!raw.contentBinary && Buffer.from(raw.contentBinary, 'base64'),
+          localSync?.setSavingEnabled(false)
+          setTitle(data.title)
+          files.update('files', data.files.map((raw): VTextFile => {
+            return {
+              ...raw,
+              lang: raw.lang as Lang || Lang.UNKNOWN,
+              contentBinary: !!raw.contentBinary && Buffer.from(raw.contentBinary, 'base64'),
+            }
+          }))
+          ui.update({ showSidebar: data.showSidebar })
+
+          if (data.dockview) {
+            nextTick(() => {
+              panels.state.dockview.fromJSON(cloneDeep(data.dockview))
+            })
           }
-        }))
-        ui.update({ showSidebar: data.showSidebar })
-      })
-      if (data.dockview) {
-        nextTick(() => {
-          panels.state.dockview.fromJSON(cloneDeep(data.dockview))
         })
+      } finally {
+        localSync?.setSavingEnabled(true)
       }
-    },
-    saveLastProject: debounce(async () => {
-      if (isImporting) return
-      const data = api.exportProject()
-      await localForage.setItem(LS_LAST_PROJECT_DATA, data)
-    }, autoSaveDebounceTime, { leading: true, trailing: true }),
-    async loadLastProject() {
-      const projectData = await localForage.getItem<ExportedProjectData>(LS_LAST_PROJECT_DATA)
-      if (!projectData) return false
-      if (!projectData.files?.length) return false
-      api.importProject(projectData)
-      return true
     },
 
     async interactiveRenameFile(filename: string | Nil) {
@@ -283,6 +232,15 @@ function createOneBoxStore() {
     prompt: ui.api.prompt,
     confirm: ui.api.confirm,
   }
+
+  // auto-saving
+  let localSync: LocalSync | undefined
+  watch(() => panels.state.dockview, async dockview => {
+    if (!dockview) return;
+    localSync = await setupLocalSync(root)
+    await localSync.load()
+    localSync.setSavingEnabled(true)
+  })
 
   return root
 }

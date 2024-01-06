@@ -14,6 +14,9 @@ importers:
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
+      dexie:
+        specifier: ^3.2.4
+        version: 3.2.4
       dockview-core:
         specifier: ^1.8.5
         version: 1.8.5
@@ -3302,6 +3305,11 @@ packages:
   /destroy@1.2.0:
     resolution: {integrity: sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
+    dev: false
+
+  /dexie@3.2.4:
+    resolution: {integrity: sha512-VKoTQRSv7+RnffpOJ3Dh6ozknBqzWw/F3iqMdsZg958R0AS8AnY9x9d1lbwENr0gzeGJHXKcGhAMRaqys6SxqA==}
+    engines: {node: '>=6.0'}
     dev: false
 
   /dir-glob@3.0.1:
